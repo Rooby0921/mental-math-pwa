@@ -1,4 +1,4 @@
-const CACHE_NAME = "mental-math-pwa-v2";
+const CACHE_NAME = "mental-math-pwa-v3";
 const ASSETS = [
   "./",
   "./index.html",
