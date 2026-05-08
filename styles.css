@@ -1,9 +1,8 @@
 :root {
   color-scheme: light;
   --bg: #fff7f1;
-  --surface: rgba(255, 253, 249, 0.94);
+  --surface: rgba(255, 253, 249, 0.95);
   --surface-soft: #fffaf5;
-  --surface-strong: #ffffff;
   --line: #ead7c6;
   --text: #2f241c;
   --muted: #7d6756;
@@ -36,15 +35,9 @@ body {
     max(18px, env(safe-area-inset-bottom)) 12px;
 }
 
-button,
-input,
-select,
-textarea {
+button {
   font: inherit;
   color: inherit;
-}
-
-button {
   touch-action: manipulation;
 }
 
@@ -71,7 +64,7 @@ button {
   gap: 10px;
 }
 
-.topbar h1 {
+.brand h1 {
   margin: 2px 0 0;
   font-size: 28px;
   line-height: 1.05;
@@ -92,20 +85,28 @@ button {
 .toolbar-button,
 .text-button,
 .ghost-button,
-.submit-button,
 .sort-button,
-.segmented button {
-  min-height: 44px;
+.segmented button,
+.filter-grid button,
+.keypad button {
   border-radius: 8px;
   border: 1px solid var(--line);
-  background: var(--surface-strong);
+  background: #fff;
   cursor: pointer;
 }
 
 .toolbar-button,
-.segmented button {
+.segmented button,
+.filter-grid button {
+  min-height: 44px;
   font-size: 14px;
   font-weight: 600;
+}
+
+.toolbar-button.primary {
+  background: var(--accent);
+  border-color: rgba(240, 127, 60, 0.45);
+  color: #fff;
 }
 
 .question-stage {
@@ -133,26 +134,23 @@ button {
   background: transparent;
 }
 
-.timer-strip {
+.status-strip,
+.mini-stats,
+.settings-summary {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 
-.timer-card,
-.settings-summary > div,
-.history-summary {
+.status-strip {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.status-card,
+.settings-summary > div {
   padding: 10px 12px;
   border-radius: 8px;
   border: 1px solid rgba(234, 215, 198, 0.9);
   background: var(--surface-soft);
-}
-
-.timer-card strong,
-.settings-summary strong {
-  display: block;
-  margin-top: 4px;
-  font-size: 20px;
 }
 
 .status-label,
@@ -161,8 +159,15 @@ button {
   font-size: 12px;
 }
 
+.status-card strong,
+.settings-summary strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 18px;
+}
+
 .question-card {
-  min-height: 280px;
+  min-height: 290px;
   display: grid;
   place-items: center;
   align-content: center;
@@ -200,8 +205,8 @@ button {
 .toolbar-help {
   margin: 0;
   min-height: 22px;
-  line-height: 1.5;
   text-align: center;
+  line-height: 1.5;
 }
 
 .focus-hint {
@@ -224,9 +229,7 @@ button {
 
 .mini-stats {
   width: 100%;
-  display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
   text-align: center;
   color: var(--muted);
   font-size: 13px;
@@ -238,8 +241,6 @@ button {
 
 .keypad-panel {
   padding: 14px;
-  display: grid;
-  gap: 12px;
 }
 
 .keypad {
@@ -249,10 +250,7 @@ button {
 }
 
 .keypad button {
-  min-height: 68px;
-  border: 1px solid rgba(240, 127, 60, 0.18);
-  background: #ffffff;
-  border-radius: 8px;
+  min-height: 70px;
   font-size: 28px;
   font-weight: 700;
 }
@@ -264,22 +262,9 @@ button {
   background: #fff8f2;
 }
 
-.submit-button {
-  min-height: 56px;
-  border-color: rgba(240, 127, 60, 0.45);
-  background: var(--accent);
-  color: #ffffff;
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.ghost-button.warning {
-  color: #b04a2a;
-}
-
 .sheet-dialog {
   width: min(96vw, 560px);
-  max-height: 86vh;
+  max-height: 88vh;
   padding: 0;
   border: none;
   border-radius: 8px;
@@ -302,15 +287,12 @@ button {
   background: #fffdf9;
 }
 
-.dialog-header h2,
-.history-summary h3 {
+.dialog-header h2 {
   margin: 0;
 }
 
 .settings-summary {
-  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
 }
 
 .settings-section {
@@ -318,80 +300,78 @@ button {
   gap: 8px;
 }
 
-.segmented {
+.segmented,
+.filter-grid,
+.reference-buttons {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
-#practiceTypeGroup.segmented,
-#operationGroup.segmented,
-#orderModeGroup.segmented {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-#difficultyGroup.segmented,
-#focusModeGroup.segmented {
+.segmented {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.teen-family-group {
+#rangeGroup.segmented,
+#operationGroup.segmented,
+#reviewModeGroup.segmented {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.fixed-number-group {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.filter-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.reference-buttons {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .segmented button.is-active,
+.filter-grid button.is-active,
 .reference-buttons button.is-active {
   background: var(--accent-soft);
   border-color: rgba(240, 127, 60, 0.48);
   color: var(--accent-strong);
 }
 
-.reference-buttons {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.reference-buttons button {
-  min-height: 44px;
-  border-radius: 8px;
-  border: 1px solid var(--line);
-  background: #fff;
-  padding: 8px 10px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
+.review-list,
 .reference-content {
-  display: grid;
-  gap: 12px;
-}
-
-.reference-card {
-  border-radius: 8px;
-  border: 1px solid rgba(234, 215, 198, 0.9);
-  background: #fffaf5;
-  padding: 14px;
   display: grid;
   gap: 10px;
 }
 
-.reference-card h3,
-.reference-card p {
-  margin: 0;
+.review-item,
+.reference-card {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(234, 215, 198, 0.9);
+  background: var(--surface-soft);
 }
 
-.reference-card p,
-.reference-row span,
-.install-steps {
+.review-item strong,
+.reference-card h3 {
+  display: block;
+  margin: 0 0 4px;
+}
+
+.review-item span,
+.reference-card p {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.5;
 }
 
+.reference-card p {
+  margin: 0;
+}
+
 .reference-grid {
   display: grid;
   gap: 8px;
+  margin-top: 10px;
 }
 
 .reference-row {
@@ -405,15 +385,15 @@ button {
 
 .history-table-wrap {
   overflow: auto;
-  border: 1px solid rgba(234, 215, 198, 0.9);
   border-radius: 8px;
+  border: 1px solid rgba(234, 215, 198, 0.9);
   background: #fff;
 }
 
 .history-table {
   width: 100%;
-  border-collapse: collapse;
   min-width: 560px;
+  border-collapse: collapse;
 }
 
 .history-table th,
@@ -432,32 +412,13 @@ button {
   font-weight: 700;
 }
 
-.weak-fact-list {
-  display: grid;
-  gap: 8px;
-}
-
-.weak-fact-item {
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(234, 215, 198, 0.9);
-  background: #fff8f4;
-  display: grid;
-  gap: 4px;
-}
-
-.weak-fact-item strong {
-  font-size: 15px;
+.ghost-button.warning {
+  color: #b04a2a;
 }
 
 .empty-state {
   color: var(--muted);
   font-size: 14px;
-}
-
-.install-steps {
-  margin: 0;
-  padding-left: 20px;
 }
 
 @media (min-width: 720px) {
@@ -467,43 +428,45 @@ button {
   }
 
   .topbar-actions {
-    grid-template-columns: repeat(4, minmax(84px, 1fr));
+    grid-template-columns: repeat(4, minmax(80px, 1fr));
   }
 
-  #difficultyGroup.segmented {
+  #rangeGroup.segmented {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  #operationGroup.segmented,
+  #reviewModeGroup.segmented {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  #focusModeGroup.segmented {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .teen-family-group {
+  .fixed-number-group {
     grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .filter-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 420px) {
-  .topbar h1 {
-    font-size: 24px;
-  }
-
-  .topbar-actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .timer-strip,
-  .settings-summary,
+  .topbar-actions,
+  .status-strip,
   .mini-stats,
-  .reference-buttons,
-  .teen-family-group,
-  #practiceTypeGroup.segmented,
+  .settings-summary,
+  .reference-buttons {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .fixed-number-group,
+  .filter-grid,
+  #rangeGroup.segmented,
   #operationGroup.segmented,
-  #orderModeGroup.segmented {
+  #reviewModeGroup.segmented {
     grid-template-columns: 1fr;
   }
 
   .keypad button {
-    min-height: 62px;
+    min-height: 64px;
   }
 }
