@@ -1,2 +1,43 @@
-# mental-math-pwa
-iPhone-friendly mental math practice app with difficulty modes and reference tables.
+# 口算练习网页
+
+这是一个适配 iPhone 的纯前端口算练习网页，支持：
+
+- `10 以内` 题型
+- `20 以内` 题型
+- `两位数 ± 个位数` 题型
+- `随机` / `顺序` 出题
+- `混合` / `加法` / `减法`
+- `基础` / `难度 1` / `难度 2`
+- 自定义数字键盘
+- 本地记录正确率、连对次数和错题
+- `10 以内加减法口诀表`
+- `20 以内加减法口诀表`
+- `9×9 乘法口诀表`
+- 可添加到 iPhone 桌面
+- 支持离线使用
+
+## 本地打开
+
+直接用浏览器打开 [`index.html`](./index.html) 可以预览界面，但如果你要测试“添加到桌面”和离线功能，建议用一个本地静态服务访问。
+
+## 部署到 Cloudflare Pages
+
+1. 注册并登录 Cloudflare
+2. 打开 Pages
+3. 选择 `Create a project`
+4. 把这个 `mental-math-pwa` 文件夹上传到 GitHub 仓库
+5. 在 Cloudflare Pages 连接这个仓库
+6. 构建设置保持空白或默认
+7. 输出目录填 `/` 或留空，使用静态站点部署
+8. 部署完成后，用生成的 `*.pages.dev` 地址在 iPhone Safari 打开
+
+## iPhone 使用
+
+1. 用 Safari 打开网页地址
+2. 点击分享
+3. 选择“添加到主屏幕”
+4. 以后就可以像 App 一样直接点开
+
+## 备注
+
+为了方便直接发布，这个版本使用 `SVG` 图标文件，不依赖额外图片资源。
