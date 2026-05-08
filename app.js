@@ -1,5 +1,6 @@
-const STORAGE_KEY = "mental-math-pwa-state-v5";
+const STORAGE_KEY = "mental-math-pwa-state-v6";
 const MAX_MISTAKES = 12;
+const MAX_HISTORY = 500;
 const REVIEW_INTERVALS_MS = [
   30 * 1000,
   2 * 60 * 1000,
@@ -9,32 +10,41 @@ const REVIEW_INTERVALS_MS = [
   3 * 24 * 60 * 60 * 1000,
   7 * 24 * 60 * 60 * 1000,
 ];
+
 const PRACTICE_TYPE_LABELS = {
   within10: "10 以内",
   within20: "20 以内",
   twoDigitOneDigit: "两位数 ± 个位数",
 };
+
 const OPERATION_LABELS = {
   mixed: "混合",
   addition: "加法",
   subtraction: "减法",
 };
+
 const ORDER_MODE_LABELS = {
   random: "随机",
   sequence: "顺序",
 };
+
 const FOCUS_MODE_LABELS = {
   none: "常规",
-  teenSubtraction: "十几减几",
+  teenFamily: "11-19 家族",
   borrowCore: "借位核心",
   reverseBridge10: "反向凑十",
 };
+
 const FOCUS_MODE_HINTS = {
   none: "常规：按你选的题型、运算和难度自由练习。",
-  teenSubtraction: "十几减几：只练 11 到 19 减去 3 到 9，专门把 13 - 8、16 - 9 这类反应练熟。",
-  borrowCore: "借位核心：只练像 53 - 8、62 - 7 这种要借位的题，并拆回 13 - 8、12 - 7 这种核心小题。",
-  reverseBridge10: "反向凑十：只练 8 + 5 = 13、7 + 6 = 13 这种过 10 的加法组合。",
+  teenFamily:
+    "11-19 家族：以 11 到 19 为第一个数，第二个数固定在 2 到 9，可以选单个家族，也可以混合随机。",
+  borrowCore:
+    "借位核心：只练像 53 - 8、62 - 7 这种要借位的题，并拆回 13 - 8、12 - 7 这种核心小题。",
+  reverseBridge10:
+    "反向凑十：只练 8 + 5 = 13、7 + 6 = 13 这种过 10 的组合，帮你更快认出关键搭配。",
 };
+
 const DIFFICULTY_RULES = {
   standard: {
     label: "基础",
@@ -69,6 +79,7 @@ const defaultState = {
     orderMode: "random",
     difficulty: "standard",
     focusMode: "none",
+    teenFamilyTarget: "mixed",
   },
   referenceView: "within10",
   stats: {
@@ -79,16 +90,18 @@ const defaultState = {
     sequenceIndex: 0,
     totalTimeMs: 0,
     lastResponseMs: 0,
+    lastResult: "未作答",
   },
   factProgress: {},
   mistakes: [],
+  history: [],
+  historySort: {
+    key: "timestamp",
+    order: "desc",
+  },
   currentProblem: null,
   currentInput: "",
 };
-
-const state = loadState();
-let problemBank = [];
-let lastProblemId = "";
 
 const elements = {
   practiceTypeGroup: document.querySelector("#practiceTypeGroup"),
@@ -98,6 +111,8 @@ const elements = {
   difficultyHint: document.querySelector("#difficultyHint"),
   focusModeGroup: document.querySelector("#focusModeGroup"),
   focusModeHint: document.querySelector("#focusModeHint"),
+  teenFamilySection: document.querySelector("#teenFamilySection"),
+  teenFamilyGroup: document.querySelector("#teenFamilyGroup"),
   questionModeLabel: document.querySelector("#questionModeLabel"),
   questionLeft: document.querySelector("#questionLeft"),
   questionOperator: document.querySelector("#questionOperator"),
@@ -105,6 +120,8 @@ const elements = {
   answerDisplay: document.querySelector("#answerDisplay"),
   focusHint: document.querySelector("#focusHint"),
   feedbackMessage: document.querySelector("#feedbackMessage"),
+  liveTimerValue: document.querySelector("#liveTimerValue"),
+  lastResultValue: document.querySelector("#lastResultValue"),
   sessionSummary: document.querySelector("#sessionSummary"),
   streakValue: document.querySelector("#streakValue"),
   accuracyValue: document.querySelector("#accuracyValue"),
@@ -116,26 +133,39 @@ const elements = {
   submitButton: document.querySelector("#submitButton"),
   nextQuestionButton: document.querySelector("#nextQuestionButton"),
   resetStatsButton: document.querySelector("#resetStatsButton"),
-  mistakeList: document.querySelector("#mistakeList"),
   clearMistakesButton: document.querySelector("#clearMistakesButton"),
   referenceButtons: document.querySelector("#referenceButtons"),
   referenceContent: document.querySelector("#referenceContent"),
+  weakFactList: document.querySelector("#weakFactList"),
+  historyTableBody: document.querySelector("#historyTableBody"),
+  clearHistoryButton: document.querySelector("#clearHistoryButton"),
+  openSettingsButton: document.querySelector("#openSettingsButton"),
+  openReferenceButton: document.querySelector("#openReferenceButton"),
+  openHistoryButton: document.querySelector("#openHistoryButton"),
   installHintButton: document.querySelector("#installHintButton"),
+  settingsDialog: document.querySelector("#settingsDialog"),
+  closeSettingsDialog: document.querySelector("#closeSettingsDialog"),
+  referenceDialog: document.querySelector("#referenceDialog"),
+  closeReferenceDialog: document.querySelector("#closeReferenceDialog"),
+  historyDialog: document.querySelector("#historyDialog"),
+  closeHistoryDialog: document.querySelector("#closeHistoryDialog"),
   installDialog: document.querySelector("#installDialog"),
   closeInstallDialog: document.querySelector("#closeInstallDialog"),
 };
 
+const state = loadState();
+let problemBank = [];
+let lastProblemId = "";
+let timerHandle = 0;
+
 function loadState() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-    if (!saved) return cloneDefaultState();
-    const settings = { ...defaultState.settings, ...saved.settings };
-    if (settings.difficulty === "bridgeCore") {
-      settings.difficulty = "standard";
-      settings.focusMode = "borrowCore";
+    if (!saved) {
+      return cloneDefaultState();
     }
     return {
-      settings,
+      settings: { ...defaultState.settings, ...saved.settings },
       referenceView:
         typeof saved.referenceView === "string"
           ? saved.referenceView
@@ -144,6 +174,8 @@ function loadState() {
       factProgress:
         saved.factProgress && typeof saved.factProgress === "object" ? saved.factProgress : {},
       mistakes: Array.isArray(saved.mistakes) ? saved.mistakes : [],
+      history: Array.isArray(saved.history) ? saved.history : [],
+      historySort: { ...defaultState.historySort, ...saved.historySort },
       currentProblem: saved.currentProblem || null,
       currentInput: typeof saved.currentInput === "string" ? saved.currentInput : "",
     };
@@ -190,19 +222,12 @@ function buildProblemBank(settings) {
         }
       }
     } else {
-      if (operation === "addition") {
-        for (let left = 10; left <= 99; left += 1) {
-          for (let right = 1; right <= 9; right += 1) {
-            if (left + right <= 99) {
-              bank.push(makeProblem(left, right, operation));
-            }
+      for (let left = 10; left <= 99; left += 1) {
+        for (let right = 1; right <= 9; right += 1) {
+          if (operation === "addition" && left + right > 99) {
+            continue;
           }
-        }
-      } else {
-        for (let left = 10; left <= 99; left += 1) {
-          for (let right = 1; right <= 9; right += 1) {
-            bank.push(makeProblem(left, right, operation));
-          }
+          bank.push(makeProblem(left, right, operation));
         }
       }
     }
@@ -214,12 +239,19 @@ function buildProblemBank(settings) {
 function buildFocusProblemBank(settings) {
   const bank = [];
 
-  if (settings.focusMode === "teenSubtraction") {
-    for (let left = 11; left <= 19; left += 1) {
-      for (let right = 3; right <= 9; right += 1) {
-        const answer = left - right;
-        if (answer >= 2 && answer <= 9) {
-          bank.push(makeProblem(left, right, "subtraction"));
+  if (settings.focusMode === "teenFamily") {
+    const starts =
+      settings.teenFamilyTarget === "mixed"
+        ? [11, 12, 13, 14, 15, 16, 17, 18, 19]
+        : [Number(settings.teenFamilyTarget)];
+    const operations =
+      settings.operation === "mixed"
+        ? ["addition", "subtraction"]
+        : [settings.operation];
+    for (const left of starts) {
+      for (const operation of operations) {
+        for (let right = 2; right <= 9; right += 1) {
+          bank.push(makeProblem(left, right, operation));
         }
       }
     }
@@ -241,12 +273,13 @@ function buildFocusProblemBank(settings) {
   if (settings.focusMode === "reverseBridge10") {
     for (let left = 2; left <= 9; left += 1) {
       for (let right = 2; right <= 9; right += 1) {
-        const answer = left + right;
-        if (answer >= 11 && answer <= 18) {
-          bank.push(makeProblem(left, right, "addition"));
+        const problem = makeProblem(left, right, "addition");
+        if (problem.answer >= 11 && problem.answer <= 18) {
+          bank.push(problem);
         }
       }
     }
+    return bank;
   }
 
   return bank;
@@ -303,8 +336,8 @@ function isBreak10Problem(problem, settings) {
 
 function isBorrowCoreProblem(problem) {
   const ones = problem.left % 10;
-  const teenCore = 10 + ones;
-  const coreResult = teenCore - problem.right;
+  const coreLeft = 10 + ones;
+  const coreResult = coreLeft - problem.right;
   return (
     ones >= 1 &&
     ones <= 8 &&
@@ -321,7 +354,7 @@ function nextProblem() {
   if (problemBank.length === 0) {
     state.currentProblem = null;
     state.currentInput = "";
-    setFeedback("这个组合暂时没有题，换个题型或难度试试。", "is-wrong");
+    setFeedback("这个组合暂时没有题，换个模式试试。", "is-wrong");
     persistAndRender();
     return;
   }
@@ -382,12 +415,14 @@ function chooseProblemFromGroups(groups, isDue) {
   const ranked = [...groups].sort((left, right) => {
     return getFactPriority(right.progress, isDue) - getFactPriority(left.progress, isDue);
   });
+
   for (const group of ranked) {
     const candidate = chooseRandomProblem(group.problems);
     if (candidate.id !== lastProblemId || ranked.length === 1) {
       return candidate;
     }
   }
+
   return chooseRandomProblem(ranked[0].problems);
 }
 
@@ -395,12 +430,11 @@ function chooseRandomProblem(list) {
   if (list.length === 1) {
     return list[0];
   }
-
-  let problem;
+  let candidate;
   do {
-    problem = list[Math.floor(Math.random() * list.length)];
-  } while (problem.id === lastProblemId);
-  return problem;
+    candidate = list[Math.floor(Math.random() * list.length)];
+  } while (candidate.id === lastProblemId);
+  return candidate;
 }
 
 function getFactPriority(progress, isDue) {
@@ -408,7 +442,7 @@ function getFactPriority(progress, isDue) {
   const accuracy = progress.attempts ? progress.correct / progress.attempts : 0;
   return (
     progress.wrong * 100 +
-    progress.slow * 35 +
+    progress.slow * 40 +
     Math.round((1 - accuracy) * 100) +
     overdueBoost / 1000
   );
@@ -425,6 +459,7 @@ function isWeakFact(progress, settings) {
 function getFactProgress(factKey) {
   return (
     state.factProgress[factKey] || {
+      label: "",
       attempts: 0,
       correct: 0,
       wrong: 0,
@@ -447,10 +482,10 @@ function getFactDescriptor(problem, settings) {
     };
   }
 
-  if (settings.focusMode === "teenSubtraction") {
+  if (settings.focusMode === "teenFamily") {
     return {
-      key: `sub-${problem.left}-${problem.right}`,
-      label: `${problem.left} - ${problem.right}`,
+      key: `${problem.operation}-${problem.left}-${problem.right}`,
+      label: `${problem.left} ${problem.operator} ${problem.right}`,
     };
   }
 
@@ -473,7 +508,7 @@ function getSlowThresholdMs(settings) {
   if (settings.focusMode === "borrowCore") {
     return 5000;
   }
-  if (settings.focusMode === "teenSubtraction" || settings.focusMode === "reverseBridge10") {
+  if (settings.focusMode === "teenFamily" || settings.focusMode === "reverseBridge10") {
     return 3200;
   }
   if (settings.practiceType === "twoDigitOneDigit") {
@@ -499,6 +534,9 @@ function formatSettingsLabel() {
   if (state.settings.focusMode === "none") {
     return base;
   }
+  if (state.settings.focusMode === "teenFamily" && state.settings.teenFamilyTarget !== "mixed") {
+    return `${base} · ${state.settings.teenFamilyTarget} 家族`;
+  }
   return `${base} · ${FOCUS_MODE_LABELS[state.settings.focusMode]}`;
 }
 
@@ -512,6 +550,27 @@ function renderProblem() {
   elements.focusHint.textContent = getFocusHint(problem, state.settings);
 }
 
+function getFocusHint(problem, settings) {
+  if (settings.focusMode === "borrowCore") {
+    const ones = problem.left % 10;
+    const tens = problem.left - ones;
+    return `核心拆分：${problem.left} - ${problem.right} = ${tens} + (${10 + ones} - ${problem.right})`;
+  }
+
+  if (settings.focusMode === "teenFamily") {
+    if (settings.teenFamilyTarget === "mixed") {
+      return "当前专项：11 到 19 与 2 到 9 的加减法混合随机。";
+    }
+    return `当前专项：${settings.teenFamilyTarget} 和 2 到 9 的加减法。`;
+  }
+
+  if (settings.focusMode === "reverseBridge10") {
+    return `核心题型：记住 ${problem.left} + ${problem.right} = ${problem.answer} 这种过 10 的组合。`;
+  }
+
+  return "";
+}
+
 function renderDifficultyHint() {
   if (state.settings.focusMode !== "none") {
     elements.difficultyHint.textContent = "当前开启专项练习，普通难度过滤会先让位给专项规则。";
@@ -522,41 +581,34 @@ function renderDifficultyHint() {
 
 function renderFocusModeHint() {
   elements.focusModeHint.textContent = FOCUS_MODE_HINTS[state.settings.focusMode];
-}
-
-function getFocusHint(problem, settings) {
-  if (settings.focusMode === "borrowCore") {
-    const ones = problem.left % 10;
-    const tens = problem.left - ones;
-    return `核心拆分：${problem.left} - ${problem.right} = ${tens} + (${10 + ones} - ${problem.right})`;
-  }
-
-  if (settings.focusMode === "teenSubtraction") {
-    return `核心题型：多刷 ${problem.left} - ${problem.right} 这种十几减几。`;
-  }
-
-  if (settings.focusMode === "reverseBridge10") {
-    return `核心题型：记住 ${problem.left} + ${problem.right} = ${problem.answer} 这种过 10 的组合。`;
-  }
-
-  return "";
+  elements.teenFamilySection.hidden = state.settings.focusMode !== "teenFamily";
 }
 
 function renderStats() {
-  const { totalAnswered, correct, wrong, streak, totalTimeMs } = state.stats;
+  const { totalAnswered, correct, wrong, streak, totalTimeMs, lastResult } = state.stats;
   const accuracy = totalAnswered ? Math.round((correct / totalAnswered) * 100) : 0;
   const avgTimeMs = totalAnswered ? totalTimeMs / totalAnswered : 0;
   elements.sessionSummary.textContent = `${totalAnswered} 题`;
-  elements.streakValue.textContent = String(streak);
-  elements.accuracyValue.textContent = `${accuracy}%`;
-  elements.avgTimeValue.textContent = `${(avgTimeMs / 1000).toFixed(1)}s`;
   elements.correctCountValue.textContent = String(correct);
   elements.wrongCountValue.textContent = String(wrong);
   elements.mistakeBankValue.textContent = String(state.mistakes.length);
+  elements.streakValue.textContent = String(streak);
+  elements.accuracyValue.textContent = `${accuracy}%`;
+  elements.avgTimeValue.textContent = `${(avgTimeMs / 1000).toFixed(1)}s`;
+  elements.lastResultValue.textContent = lastResult;
+}
+
+function renderLiveTimer() {
+  if (!state.currentProblem?.shownAt) {
+    elements.liveTimerValue.textContent = "0.0s";
+    return;
+  }
+  const elapsedMs = Math.max(0, Date.now() - state.currentProblem.shownAt);
+  elements.liveTimerValue.textContent = `${(elapsedMs / 1000).toFixed(1)}s`;
 }
 
 function renderSegmented(groupElement, value) {
-  for (const button of groupElement.querySelectorAll("button")) {
+  for (const button of groupElement.querySelectorAll("button[data-value]")) {
     button.classList.toggle("is-active", button.dataset.value === value);
   }
 }
@@ -566,12 +618,7 @@ function getReferenceData(view) {
     return {
       title: "9×9 乘法口诀表",
       description: "按行看更顺手，每行都是一个乘法家族。",
-      cards: [
-        {
-          title: "乘法口诀",
-          rows: buildMultiplicationRows(),
-        },
-      ],
+      cards: [{ title: "乘法口诀", rows: buildMultiplicationRows() }],
     };
   }
 
@@ -694,7 +741,6 @@ function renderReferenceView() {
       item.append(label, formulas);
       if (row.detail) {
         const detail = document.createElement("span");
-        detail.className = "toolbar-note";
         detail.textContent = row.detail;
         item.append(detail);
       }
@@ -706,40 +752,98 @@ function renderReferenceView() {
   });
 }
 
-function renderMistakes() {
-  elements.mistakeList.innerHTML = "";
-  if (state.mistakes.length === 0) {
-    const emptyItem = document.createElement("li");
-    emptyItem.className = "mistake-empty";
-    emptyItem.textContent = "还没有错题，继续保持。";
-    elements.mistakeList.appendChild(emptyItem);
+function renderWeakFacts() {
+  elements.weakFactList.innerHTML = "";
+  const items = Object.entries(state.factProgress)
+    .map(([key, progress]) => ({ key, progress }))
+    .filter((item) => item.progress.attempts > 0)
+    .sort((left, right) => getFactPriority(right.progress, false) - getFactPriority(left.progress, false))
+    .slice(0, 8);
+
+  if (items.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.textContent = "还没有足够的练习数据。";
+    elements.weakFactList.appendChild(empty);
     return;
   }
 
-  state.mistakes.forEach((item) => {
-    const row = document.createElement("li");
-    const problemText = document.createElement("span");
-    problemText.textContent = `${item.left} ${item.operator} ${item.right} = ${item.answer}`;
-    const wrongText = document.createElement("span");
-    wrongText.textContent = `曾输入 ${item.userAnswer}`;
-    row.append(problemText, wrongText);
-    elements.mistakeList.appendChild(row);
+  items.forEach((item) => {
+    const row = document.createElement("div");
+    row.className = "weak-fact-item";
+    const label = document.createElement("strong");
+    label.textContent = item.progress.label || item.key.replace(/^add-/, "").replace(/^sub-/, "");
+    const info = document.createElement("span");
+    const accuracy = item.progress.attempts
+      ? Math.round((item.progress.correct / item.progress.attempts) * 100)
+      : 0;
+    info.textContent = `正确率 ${accuracy}% · 平均 ${(item.progress.avgMs / 1000).toFixed(1)}s · 错 ${item.progress.wrong} 次`;
+    row.append(label, info);
+    elements.weakFactList.appendChild(row);
   });
+}
+
+function renderHistoryTable() {
+  elements.historyTableBody.innerHTML = "";
+  const rows = sortHistoryRows(state.history, state.historySort);
+
+  if (rows.length === 0) {
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = 4;
+    cell.className = "empty-state";
+    cell.textContent = "还没有练习历史。";
+    row.appendChild(cell);
+    elements.historyTableBody.appendChild(row);
+    return;
+  }
+
+  rows.forEach((item) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${item.problem}</td>
+      <td>${(item.responseMs / 1000).toFixed(1)}s</td>
+      <td>${item.isCorrect ? "正确" : "错误"}</td>
+      <td>${formatTimestamp(item.timestamp)}</td>
+    `;
+    elements.historyTableBody.appendChild(row);
+  });
+}
+
+function sortHistoryRows(rows, sortState) {
+  const sorted = [...rows];
+  const direction = sortState.order === "asc" ? 1 : -1;
+  sorted.sort((left, right) => {
+    if (sortState.key === "problem") {
+      return left.problem.localeCompare(right.problem, "zh-CN") * direction;
+    }
+    if (sortState.key === "responseMs") {
+      return (left.responseMs - right.responseMs) * direction;
+    }
+    if (sortState.key === "isCorrect") {
+      return (Number(left.isCorrect) - Number(right.isCorrect)) * direction;
+    }
+    return (left.timestamp - right.timestamp) * direction;
+  });
+  return sorted;
 }
 
 function persistAndRender() {
   saveState();
   renderProblem();
-  renderStats();
   renderDifficultyHint();
   renderFocusModeHint();
+  renderStats();
   renderReferenceView();
-  renderMistakes();
+  renderWeakFacts();
+  renderHistoryTable();
+  renderLiveTimer();
   renderSegmented(elements.practiceTypeGroup, state.settings.practiceType);
   renderSegmented(elements.operationGroup, state.settings.operation);
   renderSegmented(elements.orderModeGroup, state.settings.orderMode);
   renderSegmented(elements.difficultyGroup, state.settings.difficulty);
   renderSegmented(elements.focusModeGroup, state.settings.focusMode);
+  renderSegmented(elements.teenFamilyGroup, state.settings.teenFamilyTarget);
 }
 
 function handleDigitInput(key) {
@@ -765,12 +869,25 @@ function saveMistake(problem, userAnswer) {
   state.mistakes = [entry, ...state.mistakes].slice(0, MAX_MISTAKES);
 }
 
+function addHistoryEntry(problem, responseMs, isCorrect) {
+  state.history = [
+    {
+      id: `${problem.id}-${Date.now()}`,
+      problem: `${problem.left} ${problem.operator} ${problem.right} = ${problem.answer}`,
+      responseMs,
+      isCorrect,
+      timestamp: Date.now(),
+    },
+    ...state.history,
+  ].slice(0, MAX_HISTORY);
+}
+
 function applyFocusModeDefaults(focusMode) {
-  if (focusMode === "teenSubtraction") {
+  if (focusMode === "teenFamily") {
     state.settings.practiceType = "within20";
-    state.settings.operation = "subtraction";
+    state.settings.operation = "mixed";
     state.settings.orderMode = "random";
-    setFeedback("已切到十几减几专项。");
+    setFeedback("已切到 11-19 家族专项。");
     return;
   }
 
@@ -800,6 +917,7 @@ function updateFactProgressAfterAnswer(problem, responseMs, isCorrect) {
   const current = getFactProgress(fact.key);
   const next = {
     ...current,
+    label: fact.label,
     attempts: current.attempts + 1,
     lastSeenAt: Date.now(),
     lastResponseMs: responseMs,
@@ -824,14 +942,17 @@ function updateFactProgressAfterAnswer(problem, responseMs, isCorrect) {
     next.nextDueAt = Date.now() + 20 * 1000;
   } else if (wasSlow) {
     next.reviewStep = Math.max(0, current.reviewStep);
-    next.nextDueAt = Date.now() + REVIEW_INTERVALS_MS[Math.min(1, REVIEW_INTERVALS_MS.length - 1)];
+    next.nextDueAt = Date.now() + REVIEW_INTERVALS_MS[1];
   } else {
     next.reviewStep = Math.min(current.reviewStep + 1, REVIEW_INTERVALS_MS.length - 1);
     next.nextDueAt = Date.now() + REVIEW_INTERVALS_MS[next.reviewStep];
   }
 
   state.factProgress[fact.key] = next;
-  return wasSlow;
+  return {
+    wasSlow,
+    factLabel: fact.label,
+  };
 }
 
 function submitAnswer() {
@@ -842,22 +963,29 @@ function submitAnswer() {
 
   if (state.currentInput === "") {
     setFeedback("先输入答案。", "is-wrong");
+    persistAndRender();
     return;
   }
 
   const userAnswer = Number(state.currentInput);
   const isCorrect = userAnswer === state.currentProblem.answer;
   const responseMs = Math.max(0, Date.now() - (state.currentProblem.shownAt || Date.now()));
-  const isSlow = updateFactProgressAfterAnswer(state.currentProblem, responseMs, isCorrect);
+  const reviewState = updateFactProgressAfterAnswer(state.currentProblem, responseMs, isCorrect);
+
   state.stats.totalAnswered += 1;
   state.stats.totalTimeMs += responseMs;
   state.stats.lastResponseMs = responseMs;
+  addHistoryEntry(state.currentProblem, responseMs, isCorrect);
 
   if (isCorrect) {
     state.stats.correct += 1;
     state.stats.streak += 1;
-    if (isSlow) {
-      setFeedback(`答对了，用时 ${(responseMs / 1000).toFixed(1)} 秒，这题会稍后再练。`, "is-correct");
+    state.stats.lastResult = "正确";
+    if (reviewState.wasSlow) {
+      setFeedback(
+        `答对了，用时 ${(responseMs / 1000).toFixed(1)} 秒，这题后面还会再出现。`,
+        "is-correct"
+      );
     } else {
       setFeedback(`答对了，用时 ${(responseMs / 1000).toFixed(1)} 秒。`, "is-correct");
     }
@@ -866,10 +994,10 @@ function submitAnswer() {
   } else {
     state.stats.wrong += 1;
     state.stats.streak = 0;
+    state.stats.lastResult = "错误";
     saveMistake(state.currentProblem, userAnswer);
-    const fact = getFactDescriptor(state.currentProblem, state.settings);
     setFeedback(
-      `这题答案是 ${state.currentProblem.answer}，核心题是 ${fact.label}，我会让它后面多出现几次。`,
+      `这题答案是 ${state.currentProblem.answer}，核心题是 ${reviewState.factLabel}，我会安排它反复练。`,
       "is-wrong"
     );
     persistAndRender();
@@ -881,7 +1009,7 @@ function resetStats() {
   state.stats = { ...defaultState.stats };
   state.factProgress = {};
   state.currentInput = "";
-  setFeedback("记录已清空。");
+  setFeedback("统计和学习记忆已清空。");
   persistAndRender();
   nextProblem();
 }
@@ -889,7 +1017,6 @@ function resetStats() {
 function updateSetting(key, value) {
   if ((key === "practiceType" || key === "operation") && state.settings.focusMode !== "none") {
     state.settings.focusMode = "none";
-    setFeedback("已回到常规练习。");
   }
 
   state.settings[key] = value;
@@ -910,11 +1037,64 @@ function updateSetting(key, value) {
   nextProblem();
 }
 
+function toggleHistorySort(key) {
+  if (state.historySort.key === key) {
+    state.historySort.order = state.historySort.order === "asc" ? "desc" : "asc";
+  } else {
+    state.historySort.key = key;
+    state.historySort.order = key === "timestamp" ? "desc" : "asc";
+  }
+  persistAndRender();
+}
+
+function formatTimestamp(timestamp) {
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  return `${year}年${month}月${day}日 ${hours}:${minutes}:${seconds}`;
+}
+
 function bindSegmented(groupElement, key) {
   groupElement.addEventListener("click", (event) => {
     const button = event.target.closest("button[data-value]");
-    if (!button) return;
+    if (!button) {
+      return;
+    }
     updateSetting(key, button.dataset.value);
+  });
+}
+
+function bindDialogs() {
+  elements.openSettingsButton.addEventListener("click", () => {
+    elements.settingsDialog.showModal();
+  });
+  elements.closeSettingsDialog.addEventListener("click", () => {
+    elements.settingsDialog.close();
+  });
+
+  elements.openReferenceButton.addEventListener("click", () => {
+    elements.referenceDialog.showModal();
+  });
+  elements.closeReferenceDialog.addEventListener("click", () => {
+    elements.referenceDialog.close();
+  });
+
+  elements.openHistoryButton.addEventListener("click", () => {
+    elements.historyDialog.showModal();
+  });
+  elements.closeHistoryDialog.addEventListener("click", () => {
+    elements.historyDialog.close();
+  });
+
+  elements.installHintButton.addEventListener("click", () => {
+    elements.installDialog.showModal();
+  });
+  elements.closeInstallDialog.addEventListener("click", () => {
+    elements.installDialog.close();
   });
 }
 
@@ -924,11 +1104,32 @@ function bindEvents() {
   bindSegmented(elements.orderModeGroup, "orderMode");
   bindSegmented(elements.difficultyGroup, "difficulty");
   bindSegmented(elements.focusModeGroup, "focusMode");
+  bindSegmented(elements.teenFamilyGroup, "teenFamilyTarget");
+  bindDialogs();
 
   elements.keypad.addEventListener("click", (event) => {
     const button = event.target.closest("button[data-key]");
-    if (!button) return;
+    if (!button) {
+      return;
+    }
     handleDigitInput(button.dataset.key);
+  });
+
+  elements.referenceButtons.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-view]");
+    if (!button) {
+      return;
+    }
+    state.referenceView = button.dataset.view;
+    persistAndRender();
+  });
+
+  elements.historyDialog.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-sort-key]");
+    if (!button) {
+      return;
+    }
+    toggleHistorySort(button.dataset.sortKey);
   });
 
   elements.submitButton.addEventListener("click", submitAnswer);
@@ -939,19 +1140,19 @@ function bindEvents() {
     setFeedback("错题已清空。");
     persistAndRender();
   });
-  elements.referenceButtons.addEventListener("click", (event) => {
-    const button = event.target.closest("button[data-view]");
-    if (!button) return;
-    state.referenceView = button.dataset.view;
+  elements.clearHistoryButton.addEventListener("click", () => {
+    state.history = [];
+    setFeedback("历史记录已清空。");
     persistAndRender();
   });
 
-  elements.installHintButton.addEventListener("click", () => {
-    elements.installDialog.showModal();
-  });
-  elements.closeInstallDialog.addEventListener("click", () => {
-    elements.installDialog.close();
-  });
+  window.addEventListener(
+    "dblclick",
+    (event) => {
+      event.preventDefault();
+    },
+    { passive: false }
+  );
 
   window.addEventListener("keydown", (event) => {
     if (/^\d$/.test(event.key)) {
@@ -980,10 +1181,18 @@ function registerServiceWorker() {
   }
 }
 
+function startLiveTimer() {
+  if (timerHandle) {
+    window.clearInterval(timerHandle);
+  }
+  timerHandle = window.setInterval(renderLiveTimer, 100);
+}
+
 function init() {
   bindEvents();
   persistAndRender();
   nextProblem();
+  startLiveTimer();
   registerServiceWorker();
 }
 
