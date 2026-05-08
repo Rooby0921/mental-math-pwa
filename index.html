@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#f07f3c" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="口算练习" />
+    <meta
+      name="description"
+      content="适配 iPhone 的口算练习网页，支持 10 以内、20 以内与两位数加减个位数。"
+    />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>口算练习</title>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">iPhone 口算练习</p>
+          <h1>口算练习</h1>
+        </div>
+        <button class="ghost-button" id="installHintButton" type="button">
+          添加到桌面
+        </button>
+      </header>
+
+      <section class="toolbar">
+        <div class="toolbar-group">
+          <span class="toolbar-label">题型</span>
+          <div class="segmented" id="practiceTypeGroup">
+            <button data-value="within10" class="is-active" type="button">10 以内</button>
+            <button data-value="within20" type="button">20 以内</button>
+            <button data-value="twoDigitOneDigit" type="button">两位数 ± 个位数</button>
+          </div>
+        </div>
+
+        <div class="toolbar-group">
+          <span class="toolbar-label">运算</span>
+          <div class="segmented" id="operationGroup">
+            <button data-value="mixed" class="is-active" type="button">混合</button>
+            <button data-value="addition" type="button">加法</button>
+            <button data-value="subtraction" type="button">减法</button>
+          </div>
+        </div>
+
+        <div class="toolbar-group">
+          <span class="toolbar-label">出题</span>
+          <div class="segmented" id="orderModeGroup">
+            <button data-value="random" class="is-active" type="button">随机</button>
+            <button data-value="sequence" type="button">顺序</button>
+          </div>
+        </div>
+
+        <div class="toolbar-group difficulty-group">
+          <span class="toolbar-label">难度</span>
+          <div class="segmented" id="difficultyGroup">
+            <button data-value="standard" class="is-active" type="button">基础</button>
+            <button data-value="level1" type="button">难度 1</button>
+            <button data-value="level2" type="button">难度 2</button>
+            <button data-value="break10" type="button">突破 10</button>
+          </div>
+          <p id="difficultyHint" class="toolbar-help">
+            基础：不过滤简单题。
+          </p>
+        </div>
+      </section>
+
+      <section class="status-strip">
+        <div>
+          <span class="status-label">本轮</span>
+          <strong id="sessionSummary">0 题</strong>
+        </div>
+        <div>
+          <span class="status-label">连对</span>
+          <strong id="streakValue">0</strong>
+        </div>
+        <div>
+          <span class="status-label">历史正确率</span>
+          <strong id="accuracyValue">0%</strong>
+        </div>
+      </section>
+
+      <section class="question-stage">
+        <div class="question-meta">
+          <span id="questionModeLabel">10 以内 · 混合 · 随机 · 基础</span>
+          <button id="nextQuestionButton" class="text-button" type="button">
+            换一题
+          </button>
+        </div>
+        <div class="question-card" aria-live="polite">
+          <div class="question-text">
+            <span id="questionLeft">7</span>
+            <span id="questionOperator">+</span>
+            <span id="questionRight">5</span>
+            <span>=</span>
+          </div>
+          <div class="answer-display" id="answerDisplay">?</div>
+          <p class="feedback" id="feedbackMessage">准备好了就开始。</p>
+        </div>
+      </section>
+
+      <section class="keypad-panel">
+        <div class="keypad" id="keypad">
+          <button class="digit" data-key="1" type="button">1</button>
+          <button class="digit" data-key="2" type="button">2</button>
+          <button class="digit" data-key="3" type="button">3</button>
+          <button class="digit" data-key="4" type="button">4</button>
+          <button class="digit" data-key="5" type="button">5</button>
+          <button class="digit" data-key="6" type="button">6</button>
+          <button class="digit" data-key="7" type="button">7</button>
+          <button class="digit" data-key="8" type="button">8</button>
+          <button class="digit" data-key="9" type="button">9</button>
+          <button class="wide secondary" data-key="clear" type="button">清空</button>
+          <button class="digit" data-key="0" type="button">0</button>
+          <button class="wide secondary" data-key="backspace" type="button">退格</button>
+        </div>
+        <button id="submitButton" class="submit-button" type="button">提交答案</button>
+      </section>
+
+      <section class="record-strip">
+        <div>
+          <span class="status-label">答对</span>
+          <strong id="correctCountValue">0</strong>
+        </div>
+        <div>
+          <span class="status-label">答错</span>
+          <strong id="wrongCountValue">0</strong>
+        </div>
+        <div>
+          <span class="status-label">错题</span>
+          <strong id="mistakeBankValue">0</strong>
+        </div>
+        <button id="resetStatsButton" class="ghost-button warning" type="button">
+          清空记录
+        </button>
+      </section>
+
+      <section class="reference-panel">
+        <div class="question-meta">
+          <span>口诀表</span>
+          <span class="toolbar-note">点按钮切换查看</span>
+        </div>
+        <div class="reference-buttons" id="referenceButtons">
+          <button data-view="within10" class="is-active" type="button">
+            10 以内加减法口诀表
+          </button>
+          <button data-view="within20" type="button">20 以内加减法口诀表</button>
+          <button data-view="multiplication" type="button">9×9 乘法口诀表</button>
+        </div>
+        <div id="referenceContent" class="reference-content"></div>
+      </section>
+
+      <section class="mistakes-panel">
+        <div class="question-meta">
+          <span>最近错题</span>
+          <button id="clearMistakesButton" class="text-button" type="button">清空错题</button>
+        </div>
+        <ul id="mistakeList" class="mistake-list"></ul>
+      </section>
+    </main>
+
+    <dialog id="installDialog" class="install-dialog">
+      <div class="dialog-content">
+        <h2>怎么添加到 iPhone 桌面</h2>
+        <ol>
+          <li>用 Safari 打开这个网页</li>
+          <li>点底部“分享”按钮</li>
+          <li>选择“添加到主屏幕”</li>
+        </ol>
+        <button id="closeInstallDialog" class="submit-button small" type="button">
+          知道了
+        </button>
+      </div>
+    </dialog>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>
