@@ -2,7 +2,7 @@
   "id": "./",
   "name": "口算练习",
   "short_name": "口算练习",
-  "description": "适配 iPhone 的口算练习网页，支持十几家族专项、借位核心、自适应复习和历史记录。",
+  "description": "适配 iPhone 的口算练习网页，支持范围、固定数、自动提交、自适应复习和历史记录。",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
