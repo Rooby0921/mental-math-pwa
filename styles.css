@@ -1,0 +1,467 @@
+:root {
+  color-scheme: light;
+  --bg: #fff7f1;
+  --surface: #fffdf9;
+  --surface-alt: #fff2df;
+  --line: #ead7c6;
+  --text: #2f241c;
+  --muted: #7d6756;
+  --accent: #f07f3c;
+  --accent-strong: #d8621d;
+  --accent-soft: #ffe3cf;
+  --good: #1f8f5f;
+  --bad: #d64545;
+  --shadow: 0 18px 40px rgba(125, 74, 32, 0.08);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC",
+    "Helvetica Neue", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: linear-gradient(180deg, #fff9f4 0%, #fff2e8 100%);
+  color: var(--text);
+}
+
+body {
+  padding: max(18px, env(safe-area-inset-top)) 14px
+    max(24px, env(safe-area-inset-bottom)) 14px;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+.app-shell {
+  max-width: 760px;
+  margin: 0 auto;
+  display: grid;
+  gap: 14px;
+}
+
+.hero,
+.toolbar,
+.status-strip,
+.question-stage,
+.keypad-panel,
+.record-strip,
+.reference-panel,
+.mistakes-panel {
+  background: rgba(255, 253, 249, 0.88);
+  border: 1px solid rgba(234, 215, 198, 0.9);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+}
+
+.hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 18px;
+}
+
+.hero h1 {
+  margin: 4px 0 0;
+  font-size: clamp(28px, 7vw, 38px);
+  line-height: 1.05;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.toolbar {
+  padding: 14px;
+  display: grid;
+  gap: 14px;
+}
+
+.toolbar-group {
+  display: grid;
+  gap: 8px;
+}
+
+.toolbar-label,
+.status-label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.toolbar-help,
+.toolbar-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+#practiceTypeGroup.segmented {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+#difficultyGroup.segmented {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+#operationGroup.segmented {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.segmented button,
+.ghost-button,
+.text-button,
+.submit-button {
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+  min-height: 46px;
+  padding: 0 14px;
+  cursor: pointer;
+}
+
+.segmented button {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.segmented button.is-active {
+  background: var(--accent-soft);
+  border-color: rgba(240, 127, 60, 0.48);
+  color: var(--accent-strong);
+}
+
+.status-strip,
+.record-strip {
+  padding: 14px 16px;
+  display: grid;
+  gap: 12px;
+  align-items: center;
+}
+
+.status-strip {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.record-strip {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.status-strip strong,
+.record-strip strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 22px;
+}
+
+.question-stage {
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.question-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.text-button {
+  min-height: 38px;
+  background: transparent;
+}
+
+.question-card {
+  min-height: 210px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  background: linear-gradient(180deg, #fff7f0 0%, #ffffff 100%);
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  padding: 22px 16px;
+}
+
+.question-text {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: clamp(36px, 12vw, 64px);
+  font-weight: 700;
+}
+
+.answer-display {
+  min-height: 58px;
+  min-width: min(220px, 70vw);
+  padding: 8px 16px;
+  text-align: center;
+  border-radius: 8px;
+  border: 2px dashed rgba(240, 127, 60, 0.38);
+  background: rgba(255, 255, 255, 0.78);
+  font-size: clamp(30px, 10vw, 48px);
+  font-weight: 700;
+}
+
+.feedback {
+  margin: 0;
+  min-height: 24px;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.feedback.is-correct {
+  color: var(--good);
+}
+
+.feedback.is-wrong {
+  color: var(--bad);
+}
+
+.keypad-panel {
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.keypad button {
+  min-height: 68px;
+  border: 1px solid rgba(240, 127, 60, 0.18);
+  background: #ffffff;
+  border-radius: 8px;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.keypad button.secondary {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--muted);
+  background: #fff8f2;
+}
+
+.keypad .wide {
+  letter-spacing: 0;
+}
+
+.submit-button {
+  min-height: 56px;
+  border-color: rgba(240, 127, 60, 0.45);
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.submit-button.small {
+  min-height: 44px;
+  width: 100%;
+}
+
+.ghost-button {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.ghost-button.warning {
+  color: #b04a2a;
+}
+
+.reference-panel {
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.reference-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.reference-buttons button {
+  min-height: 48px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.reference-buttons button.is-active {
+  background: var(--accent-soft);
+  border-color: rgba(240, 127, 60, 0.48);
+  color: var(--accent-strong);
+}
+
+.reference-content {
+  display: grid;
+  gap: 12px;
+}
+
+.reference-card {
+  border-radius: 8px;
+  border: 1px solid rgba(234, 215, 198, 0.9);
+  background: #fffaf5;
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.reference-card h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.reference-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.reference-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.reference-row {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(234, 215, 198, 0.76);
+}
+
+.reference-row strong {
+  font-size: 14px;
+}
+
+.reference-row span {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.mistakes-panel {
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.mistake-list {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.mistake-list li {
+  min-height: 46px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fff8f4;
+  border: 1px solid rgba(234, 215, 198, 0.9);
+}
+
+.mistake-empty {
+  color: var(--muted);
+}
+
+.install-dialog {
+  border: none;
+  border-radius: 8px;
+  width: min(90vw, 360px);
+  padding: 0;
+  box-shadow: var(--shadow);
+}
+
+.install-dialog::backdrop {
+  background: rgba(47, 36, 28, 0.26);
+}
+
+.dialog-content {
+  padding: 18px;
+}
+
+.dialog-content h2 {
+  margin: 0 0 12px;
+  font-size: 22px;
+}
+
+.dialog-content ol {
+  margin: 0 0 18px;
+  padding-left: 22px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+@media (min-width: 720px) {
+  .toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .difficulty-group {
+    grid-column: 1 / -1;
+  }
+
+  #difficultyGroup.segmented {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 540px) {
+  .hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .status-strip,
+  .record-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .reference-buttons,
+  #practiceTypeGroup.segmented {
+    grid-template-columns: 1fr;
+  }
+
+  .keypad button {
+    min-height: 62px;
+  }
+}
