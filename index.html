@@ -60,14 +60,27 @@
 
         <div class="toolbar-group difficulty-group">
           <span class="toolbar-label">难度</span>
-          <div class="segmented" id="difficultyGroup">
-            <button data-value="standard" class="is-active" type="button">基础</button>
-            <button data-value="level1" type="button">难度 1</button>
-            <button data-value="level2" type="button">难度 2</button>
-            <button data-value="break10" type="button">突破 10</button>
+        <div class="segmented" id="difficultyGroup">
+          <button data-value="standard" class="is-active" type="button">基础</button>
+          <button data-value="level1" type="button">难度 1</button>
+          <button data-value="level2" type="button">难度 2</button>
+          <button data-value="break10" type="button">突破 10</button>
+        </div>
+        <p id="difficultyHint" class="toolbar-help">
+          基础：不过滤简单题。
+        </p>
+        </div>
+
+        <div class="toolbar-group difficulty-group">
+          <span class="toolbar-label">专项</span>
+          <div class="segmented" id="focusModeGroup">
+            <button data-value="none" class="is-active" type="button">常规</button>
+            <button data-value="teenSubtraction" type="button">十几减几</button>
+            <button data-value="borrowCore" type="button">借位核心</button>
+            <button data-value="reverseBridge10" type="button">反向凑十</button>
           </div>
-          <p id="difficultyHint" class="toolbar-help">
-            基础：不过滤简单题。
+          <p id="focusModeHint" class="toolbar-help">
+            常规：按你选的题型、运算和难度自由练习。
           </p>
         </div>
       </section>
@@ -84,6 +97,10 @@
         <div>
           <span class="status-label">历史正确率</span>
           <strong id="accuracyValue">0%</strong>
+        </div>
+        <div>
+          <span class="status-label">平均用时</span>
+          <strong id="avgTimeValue">0.0s</strong>
         </div>
       </section>
 
@@ -102,6 +119,7 @@
             <span>=</span>
           </div>
           <div class="answer-display" id="answerDisplay">?</div>
+          <p class="focus-hint" id="focusHint"></p>
           <p class="feedback" id="feedbackMessage">准备好了就开始。</p>
         </div>
       </section>
