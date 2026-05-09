@@ -1,8 +1,8 @@
 :root {
   color-scheme: light;
   --bg: #fff7f1;
-  --surface: rgba(255, 253, 249, 0.95);
-  --surface-soft: #fffaf5;
+  --surface: rgba(255, 253, 249, 0.96);
+  --surface-soft: #fffaf4;
   --line: #ead7c6;
   --text: #2f241c;
   --muted: #7d6756;
@@ -11,7 +11,7 @@
   --accent-soft: #ffe3cf;
   --good: #1f8f5f;
   --bad: #d64545;
-  --shadow: 0 18px 40px rgba(125, 74, 32, 0.08);
+  --shadow: 0 16px 36px rgba(125, 74, 32, 0.07);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC",
     "Helvetica Neue", sans-serif;
 }
@@ -24,15 +24,16 @@
 html,
 body {
   margin: 0;
-  min-height: 100%;
+  height: 100%;
   background: linear-gradient(180deg, #fff9f4 0%, #fff2e8 100%);
   color: var(--text);
   touch-action: manipulation;
+  overflow: hidden;
 }
 
 body {
-  padding: max(14px, env(safe-area-inset-top)) 12px
-    max(18px, env(safe-area-inset-bottom)) 12px;
+  padding: max(10px, env(safe-area-inset-top)) 10px
+    max(12px, env(safe-area-inset-bottom)) 10px;
 }
 
 button {
@@ -42,15 +43,17 @@ button {
 }
 
 .app-shell {
-  max-width: 560px;
+  max-width: 430px;
+  height: 100%;
   margin: 0 auto;
   display: grid;
-  gap: 12px;
+  grid-template-rows: auto minmax(0, 1fr) minmax(150px, 26dvh);
+  gap: 8px;
 }
 
 .topbar,
-.question-stage,
-.keypad-panel {
+.practice-view,
+.utility-tray {
   background: var(--surface);
   border: 1px solid rgba(234, 215, 198, 0.9);
   border-radius: 8px;
@@ -59,35 +62,43 @@ button {
 }
 
 .topbar {
-  padding: 14px;
-  display: grid;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 10px;
 }
 
+.brand {
+  min-width: 0;
+}
+
 .brand h1 {
-  margin: 2px 0 0;
-  font-size: 28px;
-  line-height: 1.05;
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.1;
 }
 
 .eyebrow {
-  margin: 0;
+  margin: 0 0 2px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 11px;
 }
 
 .topbar-actions {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  min-width: 132px;
 }
 
 .toolbar-button,
-.text-button,
 .ghost-button,
 .sort-button,
+.tray-tabs button,
 .segmented button,
 .filter-grid button,
+.reference-buttons button,
 .keypad button {
   border-radius: 8px;
   border: 1px solid var(--line);
@@ -96,10 +107,14 @@ button {
 }
 
 .toolbar-button,
+.tray-tabs button,
 .segmented button,
-.filter-grid button {
-  min-height: 44px;
-  font-size: 14px;
+.filter-grid button,
+.reference-buttons button,
+.ghost-button {
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -109,114 +124,125 @@ button {
   color: #fff;
 }
 
-.question-stage {
-  padding: 14px;
+.toolbar-button.is-running {
+  background: #fff4eb;
+  color: var(--accent-strong);
+}
+
+.practice-view {
+  min-height: 0;
+  padding: 10px;
   display: grid;
-  gap: 12px;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 8px;
 }
 
 .question-meta,
-.dialog-header,
-.dialog-actions {
+.tray-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
 
 .question-meta {
   color: var(--muted);
-  font-size: 14px;
+  font-size: 12px;
 }
 
-.text-button {
-  min-height: 38px;
-  background: transparent;
-}
-
-.status-strip,
-.mini-stats,
-.settings-summary {
-  display: grid;
-  gap: 8px;
+.toolbar-note,
+.toolbar-help,
+.empty-state {
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .status-strip {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .status-card,
-.settings-summary > div {
-  padding: 10px 12px;
+.settings-summary > div,
+.review-item,
+.reference-card,
+.reference-row {
   border-radius: 8px;
-  border: 1px solid rgba(234, 215, 198, 0.9);
+  border: 1px solid rgba(234, 215, 198, 0.88);
   background: var(--surface-soft);
+}
+
+.status-card {
+  padding: 8px 6px;
 }
 
 .status-label,
 .toolbar-label {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .status-card strong,
 .settings-summary strong {
   display: block;
-  margin-top: 4px;
-  font-size: 18px;
+  margin-top: 2px;
+  font-size: 15px;
+  line-height: 1.1;
 }
 
 .question-card {
-  min-height: 290px;
+  min-height: 0;
   display: grid;
-  place-items: center;
   align-content: center;
-  gap: 12px;
+  justify-items: center;
+  gap: 8px;
+  padding: 14px 12px 12px;
   background: linear-gradient(180deg, #fff7f0 0%, #ffffff 100%);
   border-radius: 8px;
   border: 1px solid var(--line);
-  padding: 24px 16px;
 }
 
 .question-text {
   display: flex;
   align-items: baseline;
   justify-content: center;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
-  font-size: clamp(40px, 13vw, 68px);
+  font-size: clamp(34px, 13vw, 60px);
   font-weight: 700;
+  line-height: 1;
 }
 
 .answer-display {
-  min-height: 60px;
-  min-width: min(220px, 72vw);
-  padding: 8px 16px;
+  min-height: 50px;
+  min-width: min(180px, 62vw);
+  padding: 6px 14px;
   text-align: center;
   border-radius: 8px;
-  border: 2px dashed rgba(240, 127, 60, 0.38);
-  background: rgba(255, 255, 255, 0.84);
-  font-size: clamp(30px, 10vw, 48px);
+  border: 2px dashed rgba(240, 127, 60, 0.34);
+  background: rgba(255, 255, 255, 0.86);
+  font-size: clamp(28px, 10vw, 44px);
   font-weight: 700;
+  line-height: 1.2;
 }
 
 .focus-hint,
-.feedback,
-.toolbar-help {
+.feedback {
   margin: 0;
-  min-height: 22px;
+  min-height: 18px;
   text-align: center;
-  line-height: 1.5;
+  line-height: 1.35;
 }
 
 .focus-hint {
   color: var(--accent-strong);
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .feedback {
+  font-size: 14px;
   color: var(--muted);
-  font-size: 16px;
 }
 
 .feedback.is-correct {
@@ -227,12 +253,18 @@ button {
   color: var(--bad);
 }
 
-.mini-stats {
+.mini-stats,
+.settings-summary {
   width: 100%;
+  display: grid;
+  gap: 6px;
+}
+
+.mini-stats {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   text-align: center;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .mini-stats strong {
@@ -240,95 +272,43 @@ button {
 }
 
 .keypad-panel {
-  padding: 14px;
+  padding-top: 2px;
 }
 
 .keypad {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 6px;
 }
 
 .keypad button {
-  min-height: 70px;
-  font-size: 28px;
+  min-height: 48px;
+  font-size: 24px;
   font-weight: 700;
 }
 
 .keypad button.secondary {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--muted);
   background: #fff8f2;
 }
 
-.sheet-dialog {
-  width: min(96vw, 560px);
-  max-height: 88vh;
-  padding: 0;
-  border: none;
-  border-radius: 8px;
-  box-shadow: var(--shadow);
-}
-
-.wide-sheet {
-  width: min(98vw, 920px);
-}
-
-.sheet-dialog::backdrop {
-  background: rgba(47, 36, 28, 0.28);
-}
-
-.dialog-shell {
-  padding: 16px;
+.utility-tray {
+  min-height: 0;
+  padding: 8px;
   display: grid;
-  gap: 14px;
-  overflow: auto;
-  background: #fffdf9;
-}
-
-.dialog-header h2 {
-  margin: 0;
-}
-
-.settings-summary {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.settings-section {
-  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 8px;
 }
 
-.segmented,
-.filter-grid,
-.reference-buttons {
+.tray-tabs {
   display: grid;
-  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
 }
 
-.segmented {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-#rangeGroup.segmented,
-#operationGroup.segmented,
-#reviewModeGroup.segmented {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.fixed-number-group {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.filter-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.reference-buttons {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
+.tray-tabs button.is-active,
 .segmented button.is-active,
 .filter-grid button.is-active,
 .reference-buttons button.is-active {
@@ -337,31 +317,84 @@ button {
   color: var(--accent-strong);
 }
 
+.tray-panels {
+  min-height: 0;
+  position: relative;
+}
+
+.tray-panel {
+  display: none;
+  height: 100%;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.tray-panel.is-active {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.settings-summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.settings-summary > div {
+  padding: 8px;
+}
+
+.settings-section {
+  display: grid;
+  gap: 6px;
+}
+
+.segmented,
+.filter-grid,
+.reference-buttons {
+  display: grid;
+  gap: 6px;
+}
+
+.compact-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.fixed-number-group {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.filter-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.reference-buttons {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .review-list,
 .reference-content {
   display: grid;
-  gap: 10px;
+  gap: 6px;
 }
 
 .review-item,
 .reference-card {
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(234, 215, 198, 0.9);
-  background: var(--surface-soft);
+  padding: 8px;
 }
 
 .review-item strong,
 .reference-card h3 {
   display: block;
-  margin: 0 0 4px;
+  margin: 0 0 3px;
+  font-size: 13px;
 }
 
 .review-item span,
-.reference-card p {
+.reference-card p,
+.reference-row span {
   color: var(--muted);
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .reference-card p {
@@ -370,20 +403,18 @@ button {
 
 .reference-grid {
   display: grid;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 6px;
+  margin-top: 8px;
 }
 
 .reference-row {
+  padding: 8px;
   display: grid;
-  gap: 4px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(234, 215, 198, 0.76);
+  gap: 2px;
 }
 
 .history-table-wrap {
+  min-height: 0;
   overflow: auto;
   border-radius: 8px;
   border: 1px solid rgba(234, 215, 198, 0.9);
@@ -392,16 +423,17 @@ button {
 
 .history-table {
   width: 100%;
-  min-width: 560px;
+  min-width: 500px;
   border-collapse: collapse;
 }
 
 .history-table th,
 .history-table td {
-  padding: 10px 12px;
+  padding: 8px 9px;
   border-bottom: 1px solid rgba(234, 215, 198, 0.72);
   text-align: left;
-  font-size: 14px;
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .sort-button {
@@ -410,63 +442,84 @@ button {
   border: none;
   background: transparent;
   font-weight: 700;
+  font-size: 12px;
+}
+
+.tray-actions.split {
+  justify-content: space-between;
 }
 
 .ghost-button.warning {
   color: #b04a2a;
 }
 
-.empty-state {
-  color: var(--muted);
-  font-size: 14px;
+@media (max-height: 760px) {
+  .app-shell {
+    grid-template-rows: auto minmax(0, 1fr) minmax(128px, 24dvh);
+  }
+
+  .topbar {
+    padding: 8px 10px;
+  }
+
+  .brand h1 {
+    font-size: 15px;
+  }
+
+  .practice-view {
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .question-card {
+    padding: 12px 10px 10px;
+    gap: 6px;
+  }
+
+  .keypad button {
+    min-height: 42px;
+    font-size: 22px;
+  }
+
+  .toolbar-button,
+  .tray-tabs button,
+  .segmented button,
+  .filter-grid button,
+  .reference-buttons button,
+  .ghost-button {
+    min-height: 30px;
+    font-size: 11px;
+    padding: 0 8px;
+  }
 }
 
-@media (min-width: 720px) {
-  .topbar {
-    grid-template-columns: 1fr auto;
-    align-items: center;
+@media (max-width: 390px) {
+  body {
+    padding-left: 8px;
+    padding-right: 8px;
   }
 
   .topbar-actions {
-    grid-template-columns: repeat(4, minmax(80px, 1fr));
+    min-width: 124px;
   }
 
-  #rangeGroup.segmented {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .question-text {
+    font-size: clamp(32px, 12vw, 52px);
   }
 
-  #operationGroup.segmented,
-  #reviewModeGroup.segmented {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+  .answer-display {
+    min-width: min(160px, 56vw);
+  }
+
+  .compact-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .fixed-number-group {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .filter-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 420px) {
-  .topbar-actions,
-  .status-strip,
-  .mini-stats,
-  .settings-summary,
-  .reference-buttons {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .fixed-number-group,
-  .filter-grid,
-  #rangeGroup.segmented,
-  #operationGroup.segmented,
-  #reviewModeGroup.segmented {
-    grid-template-columns: 1fr;
-  }
-
-  .keypad button {
-    min-height: 64px;
   }
 }
