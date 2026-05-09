@@ -21,21 +21,25 @@
   </head>
   <body>
     <main class="app-shell">
-      <header class="topbar">
-        <div class="brand">
-          <p class="eyebrow">iPhone 口算练习</p>
-          <h1>口算练习</h1>
-        </div>
-        <div class="topbar-actions">
-          <button id="toggleRunButton" class="toolbar-button primary" type="button">开始</button>
-          <button id="nextQuestionButton" class="toolbar-button" type="button">换题</button>
-        </div>
+      <header class="top-toolbar">
+        <button id="toggleRunButton" class="toolbar-button primary start-button" type="button">
+          开始
+        </button>
+        <nav class="menu-actions" id="panelNav" aria-label="工具菜单">
+          <button data-open-panel="review" class="panel-toggle" type="button">复习</button>
+          <button data-open-panel="history" class="panel-toggle" type="button">历史</button>
+          <button data-open-panel="reference" class="panel-toggle" type="button">口诀</button>
+          <button data-open-panel="settings" class="panel-toggle" type="button">设置</button>
+        </nav>
       </header>
 
       <section class="practice-view">
         <div class="question-meta">
           <span id="questionModeLabel">10以内随机 · 随机 · 未开始</span>
-          <span class="toolbar-note">自动提交</span>
+          <div class="meta-actions">
+            <span class="toolbar-note">自动提交</span>
+            <button id="nextQuestionButton" class="text-button" type="button">换题</button>
+          </div>
         </div>
 
         <div class="status-strip">
@@ -91,32 +95,22 @@
           </div>
         </section>
       </section>
+    </main>
 
-      <section class="utility-tray">
-        <div class="tray-tabs">
-          <button data-panel-tab="settings" class="is-active" type="button">设置</button>
-          <button data-panel-tab="review" type="button">复习</button>
-          <button data-panel-tab="history" type="button">历史</button>
-          <button data-panel-tab="reference" type="button">口诀</button>
+    <div id="panelBackdrop" class="panel-backdrop" hidden>
+      <section
+        class="panel-sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="panelTitle"
+      >
+        <div class="panel-header">
+          <h2 id="panelTitle">设置</h2>
+          <button id="closePanelButton" class="ghost-button panel-close" type="button">关闭</button>
         </div>
 
-        <div class="tray-panels">
-          <section class="tray-panel is-active" data-panel-section="settings">
-            <div class="settings-summary">
-              <div>
-                <span class="status-label">答错</span>
-                <strong id="wrongCountValue">0</strong>
-              </div>
-              <div>
-                <span class="status-label">错题</span>
-                <strong id="mistakeBankValue">0</strong>
-              </div>
-              <div>
-                <span class="status-label">最慢</span>
-                <strong id="slowFactValue">暂无</strong>
-              </div>
-            </div>
-
+        <div class="panel-body">
+          <section class="panel-section" data-panel-section="settings">
             <section class="settings-section">
               <span class="toolbar-label">范围</span>
               <div class="segmented compact-grid" id="rangeGroup">
@@ -176,13 +170,12 @@
               </div>
             </section>
 
-            <div class="tray-actions">
+            <div class="panel-actions">
               <button id="resetStatsButton" class="ghost-button warning" type="button">清空统计</button>
-              <button id="clearMistakesButton" class="ghost-button" type="button">清空错题</button>
             </div>
           </section>
 
-          <section class="tray-panel" data-panel-section="review">
+          <section class="panel-section" data-panel-section="review">
             <section class="settings-section">
               <span class="toolbar-label">复习清单</span>
               <div class="segmented compact-grid" id="reviewModeGroup">
@@ -190,7 +183,7 @@
                 <button data-value="wrongOnly" type="button">错题</button>
                 <button data-value="slowOnly" type="button">最慢</button>
               </div>
-              <div class="tray-actions">
+              <div class="panel-actions">
                 <button id="generateReviewButton" class="ghost-button" type="button">
                   生成今日复习
                 </button>
@@ -199,13 +192,32 @@
             </section>
           </section>
 
-          <section class="tray-panel" data-panel-section="history">
-            <div class="tray-actions split">
-              <span class="toolbar-label">按列名切换排序</span>
-              <button id="clearHistoryButton" class="ghost-button warning" type="button">
-                清空历史
-              </button>
+          <section class="panel-section" data-panel-section="history">
+            <div class="history-summary">
+              <div class="history-card">
+                <span class="status-label">打错</span>
+                <strong id="wrongCountValue">0</strong>
+              </div>
+              <div class="history-card">
+                <span class="status-label">错题</span>
+                <strong id="mistakeBankValue">0</strong>
+              </div>
+              <div class="history-card">
+                <span class="status-label">最慢</span>
+                <strong id="slowFactValue">暂无</strong>
+              </div>
             </div>
+
+            <div class="panel-actions split">
+              <span class="toolbar-label">按列名切换排序</span>
+              <div class="action-pair">
+                <button id="clearMistakesButton" class="ghost-button" type="button">清空错题</button>
+                <button id="clearHistoryButton" class="ghost-button warning" type="button">
+                  清空历史
+                </button>
+              </div>
+            </div>
+
             <div class="history-table-wrap">
               <table class="history-table">
                 <thead>
@@ -221,7 +233,7 @@
             </div>
           </section>
 
-          <section class="tray-panel" data-panel-section="reference">
+          <section class="panel-section" data-panel-section="reference">
             <div class="reference-buttons" id="referenceButtons">
               <button data-view="within10" class="is-active" type="button">10内加减</button>
               <button data-view="within20" type="button">20内加减</button>
@@ -231,7 +243,7 @@
           </section>
         </div>
       </section>
-    </main>
+    </div>
 
     <script src="./app.js" defer></script>
   </body>

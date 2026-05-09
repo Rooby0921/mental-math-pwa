@@ -1,6 +1,5 @@
 :root {
   color-scheme: light;
-  --bg: #fff7f1;
   --surface: rgba(255, 253, 249, 0.96);
   --surface-soft: #fffaf4;
   --line: #ead7c6;
@@ -25,10 +24,10 @@ html,
 body {
   margin: 0;
   height: 100%;
+  overflow: hidden;
   background: linear-gradient(180deg, #fff9f4 0%, #fff2e8 100%);
   color: var(--text);
   touch-action: manipulation;
-  overflow: hidden;
 }
 
 body {
@@ -47,55 +46,32 @@ button {
   height: 100%;
   margin: 0 auto;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) minmax(150px, 26dvh);
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 8px;
 }
 
-.topbar,
+.top-toolbar,
 .practice-view,
-.utility-tray {
+.panel-sheet {
   background: var(--surface);
-  border: 1px solid rgba(234, 215, 198, 0.9);
+  border: 1px solid rgba(234, 215, 198, 0.92);
   border-radius: 8px;
   box-shadow: var(--shadow);
-  backdrop-filter: blur(10px);
 }
 
-.topbar {
-  padding: 10px 12px;
+.top-toolbar {
+  padding: 8px 10px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-}
-
-.brand {
-  min-width: 0;
-}
-
-.brand h1 {
-  margin: 0;
-  font-size: 16px;
-  line-height: 1.1;
-}
-
-.eyebrow {
-  margin: 0 0 2px;
-  color: var(--muted);
-  font-size: 11px;
-}
-
-.topbar-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-  min-width: 132px;
+  gap: 8px;
 }
 
 .toolbar-button,
+.text-button,
 .ghost-button,
+.panel-toggle,
 .sort-button,
-.tray-tabs button,
 .segmented button,
 .filter-grid button,
 .reference-buttons button,
@@ -107,7 +83,7 @@ button {
 }
 
 .toolbar-button,
-.tray-tabs button,
+.panel-toggle,
 .segmented button,
 .filter-grid button,
 .reference-buttons button,
@@ -129,6 +105,28 @@ button {
   color: var(--accent-strong);
 }
 
+.start-button {
+  min-width: 78px;
+  justify-self: start;
+}
+
+.menu-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.panel-toggle.is-active,
+.segmented button.is-active,
+.filter-grid button.is-active,
+.reference-buttons button.is-active {
+  background: var(--accent-soft);
+  border-color: rgba(240, 127, 60, 0.48);
+  color: var(--accent-strong);
+}
+
 .practice-view {
   min-height: 0;
   padding: 10px;
@@ -138,16 +136,26 @@ button {
 }
 
 .question-meta,
-.tray-actions {
+.meta-actions,
+.panel-header,
+.panel-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
+}
+
+.question-meta,
+.panel-actions.split {
+  justify-content: space-between;
 }
 
 .question-meta {
   color: var(--muted);
   font-size: 12px;
+}
+
+.meta-actions {
+  justify-content: flex-end;
 }
 
 .toolbar-note,
@@ -157,6 +165,14 @@ button {
   font-size: 12px;
 }
 
+.text-button,
+.panel-close {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 12px;
+  background: transparent;
+}
+
 .status-strip {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -164,7 +180,7 @@ button {
 }
 
 .status-card,
-.settings-summary > div,
+.history-card,
 .review-item,
 .reference-card,
 .reference-row {
@@ -184,7 +200,7 @@ button {
 }
 
 .status-card strong,
-.settings-summary strong {
+.history-card strong {
   display: block;
   margin-top: 2px;
   font-size: 15px;
@@ -221,7 +237,7 @@ button {
   text-align: center;
   border-radius: 8px;
   border: 2px dashed rgba(240, 127, 60, 0.34);
-  background: rgba(255, 255, 255, 0.86);
+  background: rgba(255, 255, 255, 0.88);
   font-size: clamp(28px, 10vw, 44px);
   font-weight: 700;
   line-height: 1.2;
@@ -241,8 +257,8 @@ button {
 }
 
 .feedback {
-  font-size: 14px;
   color: var(--muted);
+  font-size: 14px;
 }
 
 .feedback.is-correct {
@@ -253,15 +269,11 @@ button {
   color: var(--bad);
 }
 
-.mini-stats,
-.settings-summary {
+.mini-stats {
   width: 100%;
   display: grid;
-  gap: 6px;
-}
-
-.mini-stats {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
   text-align: center;
   color: var(--muted);
   font-size: 12px;
@@ -294,53 +306,50 @@ button {
   background: #fff8f2;
 }
 
-.utility-tray {
-  min-height: 0;
-  padding: 8px;
+.panel-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  align-items: end;
+  padding: 12px 10px max(14px, env(safe-area-inset-bottom)) 10px;
+  background: rgba(47, 36, 28, 0.14);
+  backdrop-filter: blur(4px);
+}
+
+.panel-backdrop[hidden] {
+  display: none;
+}
+
+.panel-sheet {
+  max-width: 430px;
+  width: 100%;
+  max-height: min(62dvh, 520px);
+  margin: 0 auto;
+  padding: 10px;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: 8px;
+  gap: 10px;
 }
 
-.tray-tabs {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
+.panel-header h2 {
+  margin: 0;
+  font-size: 15px;
 }
 
-.tray-tabs button.is-active,
-.segmented button.is-active,
-.filter-grid button.is-active,
-.reference-buttons button.is-active {
-  background: var(--accent-soft);
-  border-color: rgba(240, 127, 60, 0.48);
-  color: var(--accent-strong);
-}
-
-.tray-panels {
+.panel-body {
   min-height: 0;
-  position: relative;
-}
-
-.tray-panel {
-  display: none;
-  height: 100%;
   overflow: auto;
-  padding-right: 2px;
-}
-
-.tray-panel.is-active {
   display: grid;
+}
+
+.panel-section {
+  display: none;
   align-content: start;
-  gap: 8px;
+  gap: 10px;
 }
 
-.settings-summary {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.settings-summary > div {
-  padding: 8px;
+.panel-section.is-active {
+  display: grid;
 }
 
 .settings-section {
@@ -350,7 +359,8 @@ button {
 
 .segmented,
 .filter-grid,
-.reference-buttons {
+.reference-buttons,
+.history-summary {
   display: grid;
   gap: 6px;
 }
@@ -367,19 +377,29 @@ button {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.reference-buttons {
+.reference-buttons,
+.history-summary {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.history-card,
+.review-item,
+.reference-card {
+  padding: 8px;
+}
+
+.action-pair {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .review-list,
 .reference-content {
   display: grid;
   gap: 6px;
-}
-
-.review-item,
-.reference-card {
-  padding: 8px;
 }
 
 .review-item strong,
@@ -445,30 +465,16 @@ button {
   font-size: 12px;
 }
 
-.tray-actions.split {
-  justify-content: space-between;
-}
-
 .ghost-button.warning {
   color: #b04a2a;
 }
 
 @media (max-height: 760px) {
-  .app-shell {
-    grid-template-rows: auto minmax(0, 1fr) minmax(128px, 24dvh);
-  }
-
-  .topbar {
-    padding: 8px 10px;
-  }
-
-  .brand h1 {
-    font-size: 15px;
-  }
-
-  .practice-view {
-    padding: 8px;
-    gap: 6px;
+  .top-toolbar,
+  .practice-view,
+  .panel-sheet {
+    padding-top: 8px;
+    padding-bottom: 8px;
   }
 
   .question-card {
@@ -482,7 +488,7 @@ button {
   }
 
   .toolbar-button,
-  .tray-tabs button,
+  .panel-toggle,
   .segmented button,
   .filter-grid button,
   .reference-buttons button,
@@ -497,10 +503,6 @@ button {
   body {
     padding-left: 8px;
     padding-right: 8px;
-  }
-
-  .topbar-actions {
-    min-width: 124px;
   }
 
   .question-text {

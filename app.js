@@ -76,7 +76,10 @@ const defaultState = {
 const elements = {
   toggleRunButton: document.querySelector("#toggleRunButton"),
   nextQuestionButton: document.querySelector("#nextQuestionButton"),
-  trayTabs: document.querySelector(".tray-tabs"),
+  panelNav: document.querySelector("#panelNav"),
+  panelBackdrop: document.querySelector("#panelBackdrop"),
+  closePanelButton: document.querySelector("#closePanelButton"),
+  panelTitle: document.querySelector("#panelTitle"),
   questionModeLabel: document.querySelector("#questionModeLabel"),
   liveTimerValue: document.querySelector("#liveTimerValue"),
   lastResultValue: document.querySelector("#lastResultValue"),
@@ -109,7 +112,14 @@ const elements = {
   historyTableBody: document.querySelector("#historyTableBody"),
   referenceButtons: document.querySelector("#referenceButtons"),
   referenceContent: document.querySelector("#referenceContent"),
-  panelSections: [...document.querySelectorAll("[data-panel-section]")],
+  panelSections: [...document.querySelectorAll(".panel-section[data-panel-section]")],
+};
+
+const PANEL_TITLES = {
+  review: "复习",
+  history: "历史",
+  reference: "口诀",
+  settings: "设置",
 };
 
 const state = loadState();
@@ -117,7 +127,10 @@ let problemBank = [];
 let timerHandle = 0;
 let lastProblemId = "";
 let autoSubmitHandle = 0;
+let nextProblemHandle = 0;
+let isAnswerLocked = false;
 let activePanel = "settings";
+let isPanelOpen = false;
 
 function loadState() {
   try {
@@ -125,6 +138,16 @@ function loadState() {
     if (!saved) {
       return cloneDefaultState();
     }
+
+    const savedProblem =
+      saved.currentProblem && typeof saved.currentProblem === "object"
+        ? {
+            ...saved.currentProblem,
+            shownAt: null,
+            elapsedBeforePauseMs: 0,
+          }
+        : null;
+
     return {
       settings: {
         ...defaultState.settings,
@@ -132,9 +155,9 @@ function loadState() {
         filters: Array.isArray(saved.settings?.filters) ? saved.settings.filters : [],
       },
       stats: { ...defaultState.stats, ...saved.stats },
-      currentProblem: saved.currentProblem || null,
+      currentProblem: savedProblem,
       currentInput: typeof saved.currentInput === "string" ? saved.currentInput : "",
-      isRunning: Boolean(saved.isRunning),
+      isRunning: false,
       factProgress:
         saved.factProgress && typeof saved.factProgress === "object" ? saved.factProgress : {},
       mistakes: Array.isArray(saved.mistakes) ? saved.mistakes : [],
@@ -157,6 +180,24 @@ function cloneDefaultState() {
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function clearPendingNextProblem() {
+  if (nextProblemHandle) {
+    window.clearTimeout(nextProblemHandle);
+    nextProblemHandle = 0;
+  }
+}
+
+function clearAutoSubmit() {
+  if (autoSubmitHandle) {
+    window.clearTimeout(autoSubmitHandle);
+    autoSubmitHandle = 0;
+  }
+}
+
+function releaseAnswerLock() {
+  isAnswerLocked = false;
 }
 
 function getAllowedOperations() {
@@ -289,6 +330,9 @@ function isFiltered(problem) {
 }
 
 function chooseNextProblem() {
+  clearPendingNextProblem();
+  clearAutoSubmit();
+  releaseAnswerLock();
   problemBank = buildProblemBank();
   if (problemBank.length === 0) {
     state.currentProblem = null;
@@ -299,7 +343,15 @@ function chooseNextProblem() {
   }
 
   const reviewFiltered = getReviewFilteredProblems(problemBank);
-  const basePool = reviewFiltered.length > 0 ? reviewFiltered : problemBank;
+  if (state.settings.reviewMode !== "all" && reviewFiltered.length === 0) {
+    state.currentProblem = null;
+    state.currentInput = "";
+    setFeedback("这个复习模式里还没有题，先做几题，或者切回“全部”。", "is-wrong");
+    persistAndRender();
+    return;
+  }
+
+  const basePool = state.settings.reviewMode === "all" ? problemBank : reviewFiltered;
   const dueProblems = getDueProblems(basePool);
   const candidates = dueProblems.length > 0 ? dueProblems : basePool;
   const weighted = candidates
@@ -398,6 +450,8 @@ function getFactProgress(key) {
 }
 
 function startRun() {
+  clearPendingNextProblem();
+  releaseAnswerLock();
   state.isRunning = true;
   elements.toggleRunButton.textContent = "暂停";
   elements.toggleRunButton.classList.add("is-running");
@@ -413,6 +467,9 @@ function startRun() {
 }
 
 function pauseRun() {
+  clearPendingNextProblem();
+  clearAutoSubmit();
+  releaseAnswerLock();
   state.isRunning = false;
   elements.toggleRunButton.textContent = "开始";
   elements.toggleRunButton.classList.remove("is-running");
@@ -445,6 +502,9 @@ function getCurrentElapsedMs() {
 }
 
 function handleDigitInput(key) {
+  if (isPanelOpen || isAnswerLocked) {
+    return;
+  }
   if (!state.isRunning) {
     setFeedback("先点“开始”。", "is-wrong");
     persistAndRender();
@@ -468,10 +528,7 @@ function handleDigitInput(key) {
 }
 
 function scheduleAutoSubmitIfReady() {
-  if (autoSubmitHandle) {
-    window.clearTimeout(autoSubmitHandle);
-    autoSubmitHandle = 0;
-  }
+  clearAutoSubmit();
 
   if (!state.currentProblem || state.currentInput === "") {
     return;
@@ -500,10 +557,8 @@ function submitCurrentAnswer() {
     return;
   }
 
-  if (autoSubmitHandle) {
-    window.clearTimeout(autoSubmitHandle);
-    autoSubmitHandle = 0;
-  }
+  clearAutoSubmit();
+  clearPendingNextProblem();
 
   const responseMs = getCurrentElapsedMs();
   const userAnswer = Number(state.currentInput);
@@ -524,11 +579,15 @@ function submitCurrentAnswer() {
   }
 
   state.currentInput = "";
+  isAnswerLocked = true;
   persistAndRender();
-  window.setTimeout(() => {
+  nextProblemHandle = window.setTimeout(() => {
+    nextProblemHandle = 0;
     if (state.isRunning) {
       chooseNextProblem();
+      return;
     }
+    releaseAnswerLock();
   }, isCorrect ? 500 : 1000);
 }
 
@@ -605,28 +664,24 @@ function saveMistake(problem, userAnswer) {
 }
 
 function nextProblem() {
+  clearPendingNextProblem();
+  releaseAnswerLock();
   chooseNextProblem();
 }
 
 function updateSetting(key, value) {
-  if (autoSubmitHandle) {
-    window.clearTimeout(autoSubmitHandle);
-    autoSubmitHandle = 0;
-  }
+  clearAutoSubmit();
+  clearPendingNextProblem();
+  releaseAnswerLock();
   state.settings[key] = value;
-  if (key !== "reviewMode") {
-    state.currentInput = "";
-    chooseNextProblem();
-  } else {
-    persistAndRender();
-  }
+  state.currentInput = "";
+  chooseNextProblem();
 }
 
 function toggleFilter(filterKey) {
-  if (autoSubmitHandle) {
-    window.clearTimeout(autoSubmitHandle);
-    autoSubmitHandle = 0;
-  }
+  clearAutoSubmit();
+  clearPendingNextProblem();
+  releaseAnswerLock();
   const current = new Set(state.settings.filters);
   if (current.has(filterKey)) {
     current.delete(filterKey);
@@ -702,16 +757,38 @@ function renderHeaderStatus() {
   elements.toggleRunButton.classList.toggle("is-running", state.isRunning);
 }
 
-function renderUtilityPanel() {
-  if (elements.trayTabs) {
-    for (const button of elements.trayTabs.querySelectorAll("button[data-panel-tab]")) {
-      button.classList.toggle("is-active", button.dataset.panelTab === activePanel);
+function renderPanelState() {
+  if (elements.panelNav) {
+    for (const button of elements.panelNav.querySelectorAll("button[data-open-panel]")) {
+      button.classList.toggle(
+        "is-active",
+        isPanelOpen && button.dataset.openPanel === activePanel
+      );
     }
   }
 
   for (const section of elements.panelSections) {
     section.classList.toggle("is-active", section.dataset.panelSection === activePanel);
   }
+
+  if (elements.panelTitle) {
+    elements.panelTitle.textContent = PANEL_TITLES[activePanel] || "设置";
+  }
+
+  if (elements.panelBackdrop) {
+    elements.panelBackdrop.hidden = !isPanelOpen;
+  }
+}
+
+function openPanel(panelName) {
+  activePanel = panelName;
+  isPanelOpen = true;
+  renderPanelState();
+}
+
+function closePanel() {
+  isPanelOpen = false;
+  renderPanelState();
 }
 
 function renderStats() {
@@ -949,7 +1026,7 @@ function formatTimestamp(timestamp) {
 function persistAndRender() {
   saveState();
   renderHeaderStatus();
-  renderUtilityPanel();
+  renderPanelState();
   renderProblem();
   renderStats();
   renderReviewList();
@@ -963,10 +1040,9 @@ function persistAndRender() {
 }
 
 function clearStats() {
-  if (autoSubmitHandle) {
-    window.clearTimeout(autoSubmitHandle);
-    autoSubmitHandle = 0;
-  }
+  clearAutoSubmit();
+  clearPendingNextProblem();
+  releaseAnswerLock();
   state.stats = { ...defaultState.stats };
   state.factProgress = {};
   state.todayReview = [];
@@ -994,7 +1070,7 @@ function bindEvents() {
   elements.resetStatsButton.addEventListener("click", clearStats);
   elements.clearMistakesButton.addEventListener("click", () => {
     state.mistakes = [];
-    setFeedback("错题已清空。");
+    setFeedback("错题本已清空，做题表现记录仍保留。");
     persistAndRender();
   });
   elements.clearHistoryButton.addEventListener("click", () => {
@@ -1068,14 +1144,30 @@ function bindEvents() {
     }
   });
 
-  if (elements.trayTabs) {
-    elements.trayTabs.addEventListener("click", (event) => {
-      const button = event.target.closest("button[data-panel-tab]");
+  if (elements.panelNav) {
+    elements.panelNav.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-open-panel]");
       if (!button) {
         return;
       }
-      activePanel = button.dataset.panelTab;
-      renderUtilityPanel();
+      const panelName = button.dataset.openPanel;
+      if (isPanelOpen && activePanel === panelName) {
+        closePanel();
+        return;
+      }
+      openPanel(panelName);
+    });
+  }
+
+  if (elements.closePanelButton) {
+    elements.closePanelButton.addEventListener("click", closePanel);
+  }
+
+  if (elements.panelBackdrop) {
+    elements.panelBackdrop.addEventListener("click", (event) => {
+      if (event.target === elements.panelBackdrop) {
+        closePanel();
+      }
     });
   }
 
@@ -1088,6 +1180,10 @@ function bindEvents() {
   );
 
   window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && isPanelOpen) {
+      closePanel();
+      return;
+    }
     if (/^\d$/.test(event.key)) {
       handleDigitInput(event.key);
       return;
