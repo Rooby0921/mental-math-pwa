@@ -10,6 +10,7 @@ const REVIEW_INTERVALS_MS = [
 ];
 const MAX_HISTORY = 600;
 const MAX_MISTAKES = 20;
+const AUTO_SUBMIT_DELAY_MS = 220;
 
 const RANGE_OPTIONS = {
   within10Random: { label: "10以内随机", limit: 10, oddEven: false },
@@ -74,10 +75,8 @@ const defaultState = {
 
 const elements = {
   toggleRunButton: document.querySelector("#toggleRunButton"),
-  openSettingsButton: document.querySelector("#openSettingsButton"),
-  openHistoryButton: document.querySelector("#openHistoryButton"),
-  openReferenceButton: document.querySelector("#openReferenceButton"),
   nextQuestionButton: document.querySelector("#nextQuestionButton"),
+  trayTabs: document.querySelector(".tray-tabs"),
   questionModeLabel: document.querySelector("#questionModeLabel"),
   liveTimerValue: document.querySelector("#liveTimerValue"),
   lastResultValue: document.querySelector("#lastResultValue"),
@@ -92,12 +91,6 @@ const elements = {
   focusHint: document.querySelector("#focusHint"),
   feedbackMessage: document.querySelector("#feedbackMessage"),
   keypad: document.querySelector("#keypad"),
-  settingsDialog: document.querySelector("#settingsDialog"),
-  closeSettingsDialog: document.querySelector("#closeSettingsDialog"),
-  historyDialog: document.querySelector("#historyDialog"),
-  closeHistoryDialog: document.querySelector("#closeHistoryDialog"),
-  referenceDialog: document.querySelector("#referenceDialog"),
-  closeReferenceDialog: document.querySelector("#closeReferenceDialog"),
   rangeGroup: document.querySelector("#rangeGroup"),
   operationGroup: document.querySelector("#operationGroup"),
   fixedNumberGroup: document.querySelector("#fixedNumberGroup"),
@@ -116,12 +109,15 @@ const elements = {
   historyTableBody: document.querySelector("#historyTableBody"),
   referenceButtons: document.querySelector("#referenceButtons"),
   referenceContent: document.querySelector("#referenceContent"),
+  panelSections: [...document.querySelectorAll("[data-panel-section]")],
 };
 
 const state = loadState();
 let problemBank = [];
 let timerHandle = 0;
 let lastProblemId = "";
+let autoSubmitHandle = 0;
+let activePanel = "settings";
 
 function loadState() {
   try {
@@ -468,23 +464,45 @@ function handleDigitInput(key) {
   }
 
   persistAndRender();
-  autoSubmitIfReady();
+  scheduleAutoSubmitIfReady();
 }
 
-function autoSubmitIfReady() {
+function scheduleAutoSubmitIfReady() {
+  if (autoSubmitHandle) {
+    window.clearTimeout(autoSubmitHandle);
+    autoSubmitHandle = 0;
+  }
+
   if (!state.currentProblem || state.currentInput === "") {
     return;
   }
 
-  const targetDigits = String(state.currentProblem.answer).length;
-  if (state.currentInput.length >= targetDigits) {
-    submitCurrentAnswer();
+  const expectedLength = getExpectedAnswerLength(state.currentProblem);
+  if (state.currentInput.length < expectedLength) {
+    return;
   }
+
+  autoSubmitHandle = window.setTimeout(() => {
+    autoSubmitHandle = 0;
+    const latestLength = state.currentInput.length;
+    if (latestLength >= expectedLength) {
+      submitCurrentAnswer();
+    }
+  }, expectedLength > 1 ? AUTO_SUBMIT_DELAY_MS : 80);
+}
+
+function getExpectedAnswerLength(problem) {
+  return String(problem.answer).length;
 }
 
 function submitCurrentAnswer() {
   if (!state.currentProblem || state.currentInput === "") {
     return;
+  }
+
+  if (autoSubmitHandle) {
+    window.clearTimeout(autoSubmitHandle);
+    autoSubmitHandle = 0;
   }
 
   const responseMs = getCurrentElapsedMs();
@@ -591,6 +609,10 @@ function nextProblem() {
 }
 
 function updateSetting(key, value) {
+  if (autoSubmitHandle) {
+    window.clearTimeout(autoSubmitHandle);
+    autoSubmitHandle = 0;
+  }
   state.settings[key] = value;
   if (key !== "reviewMode") {
     state.currentInput = "";
@@ -601,6 +623,10 @@ function updateSetting(key, value) {
 }
 
 function toggleFilter(filterKey) {
+  if (autoSubmitHandle) {
+    window.clearTimeout(autoSubmitHandle);
+    autoSubmitHandle = 0;
+  }
   const current = new Set(state.settings.filters);
   if (current.has(filterKey)) {
     current.delete(filterKey);
@@ -674,6 +700,18 @@ function renderHeaderStatus() {
   elements.questionModeLabel.textContent = `${rangeLabel} · ${operationLabel}${fixedLabel} · ${runLabel}`;
   elements.toggleRunButton.textContent = state.isRunning ? "暂停" : "开始";
   elements.toggleRunButton.classList.toggle("is-running", state.isRunning);
+}
+
+function renderUtilityPanel() {
+  if (elements.trayTabs) {
+    for (const button of elements.trayTabs.querySelectorAll("button[data-panel-tab]")) {
+      button.classList.toggle("is-active", button.dataset.panelTab === activePanel);
+    }
+  }
+
+  for (const section of elements.panelSections) {
+    section.classList.toggle("is-active", section.dataset.panelSection === activePanel);
+  }
 }
 
 function renderStats() {
@@ -911,6 +949,7 @@ function formatTimestamp(timestamp) {
 function persistAndRender() {
   saveState();
   renderHeaderStatus();
+  renderUtilityPanel();
   renderProblem();
   renderStats();
   renderReviewList();
@@ -924,6 +963,10 @@ function persistAndRender() {
 }
 
 function clearStats() {
+  if (autoSubmitHandle) {
+    window.clearTimeout(autoSubmitHandle);
+    autoSubmitHandle = 0;
+  }
   state.stats = { ...defaultState.stats };
   state.factProgress = {};
   state.todayReview = [];
@@ -944,30 +987,7 @@ function startTimerLoop() {
   }, 100);
 }
 
-function bindDialogs() {
-  elements.openSettingsButton.addEventListener("click", () => {
-    elements.settingsDialog.showModal();
-  });
-  elements.closeSettingsDialog.addEventListener("click", () => {
-    elements.settingsDialog.close();
-  });
-  elements.openHistoryButton.addEventListener("click", () => {
-    elements.historyDialog.showModal();
-  });
-  elements.closeHistoryDialog.addEventListener("click", () => {
-    elements.historyDialog.close();
-  });
-  elements.openReferenceButton.addEventListener("click", () => {
-    elements.referenceDialog.showModal();
-  });
-  elements.closeReferenceDialog.addEventListener("click", () => {
-    elements.referenceDialog.close();
-  });
-}
-
 function bindEvents() {
-  bindDialogs();
-
   elements.toggleRunButton.addEventListener("click", toggleRun);
   elements.nextQuestionButton.addEventListener("click", nextProblem);
   elements.generateReviewButton.addEventListener("click", generateTodayReview);
@@ -1025,7 +1045,7 @@ function bindEvents() {
     }
   });
 
-  elements.historyDialog.addEventListener("click", (event) => {
+  document.addEventListener("click", (event) => {
     const button = event.target.closest("button[data-sort-key]");
     if (!button) {
       return;
@@ -1047,6 +1067,17 @@ function bindEvents() {
       persistAndRender();
     }
   });
+
+  if (elements.trayTabs) {
+    elements.trayTabs.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-panel-tab]");
+      if (!button) {
+        return;
+      }
+      activePanel = button.dataset.panelTab;
+      renderUtilityPanel();
+    });
+  }
 
   window.addEventListener(
     "dblclick",
