@@ -28,21 +28,19 @@
         </div>
         <div class="topbar-actions">
           <button id="toggleRunButton" class="toolbar-button primary" type="button">开始</button>
-          <button id="openSettingsButton" class="toolbar-button" type="button">设置</button>
-          <button id="openHistoryButton" class="toolbar-button" type="button">历史</button>
-          <button id="openReferenceButton" class="toolbar-button" type="button">口诀</button>
+          <button id="nextQuestionButton" class="toolbar-button" type="button">换题</button>
         </div>
       </header>
 
-      <section class="question-stage">
+      <section class="practice-view">
         <div class="question-meta">
           <span id="questionModeLabel">10以内随机 · 随机 · 未开始</span>
-          <button id="nextQuestionButton" class="text-button" type="button">换题</button>
+          <span class="toolbar-note">自动提交</span>
         </div>
 
         <div class="status-strip">
           <div class="status-card">
-            <span class="status-label">本题计时</span>
+            <span class="status-label">本题</span>
             <strong id="liveTimerValue">0.0s</strong>
           </div>
           <div class="status-card">
@@ -52,6 +50,10 @@
           <div class="status-card">
             <span class="status-label">正确率</span>
             <strong id="accuracyValue">0%</strong>
+          </div>
+          <div class="status-card">
+            <span class="status-label">连对</span>
+            <strong id="streakValue">0</strong>
           </div>
         </div>
 
@@ -67,174 +69,169 @@
           <p id="feedbackMessage" class="feedback">点“开始”后直接输入答案。</p>
           <div class="mini-stats">
             <span>平均 <strong id="avgTimeValue">0.0s</strong></span>
-            <span>连对 <strong id="streakValue">0</strong></span>
             <span>总题 <strong id="sessionSummary">0题</strong></span>
+            <span>答对 <strong id="correctCountValue">0</strong></span>
           </div>
         </div>
+
+        <section class="keypad-panel">
+          <div class="keypad" id="keypad">
+            <button class="digit" data-key="1" type="button">1</button>
+            <button class="digit" data-key="2" type="button">2</button>
+            <button class="digit" data-key="3" type="button">3</button>
+            <button class="digit" data-key="4" type="button">4</button>
+            <button class="digit" data-key="5" type="button">5</button>
+            <button class="digit" data-key="6" type="button">6</button>
+            <button class="digit" data-key="7" type="button">7</button>
+            <button class="digit" data-key="8" type="button">8</button>
+            <button class="digit" data-key="9" type="button">9</button>
+            <button class="wide secondary" data-key="clear" type="button">清空</button>
+            <button class="digit" data-key="0" type="button">0</button>
+            <button class="wide secondary" data-key="backspace" type="button">退格</button>
+          </div>
+        </section>
       </section>
 
-      <section class="keypad-panel">
-        <div class="keypad" id="keypad">
-          <button class="digit" data-key="1" type="button">1</button>
-          <button class="digit" data-key="2" type="button">2</button>
-          <button class="digit" data-key="3" type="button">3</button>
-          <button class="digit" data-key="4" type="button">4</button>
-          <button class="digit" data-key="5" type="button">5</button>
-          <button class="digit" data-key="6" type="button">6</button>
-          <button class="digit" data-key="7" type="button">7</button>
-          <button class="digit" data-key="8" type="button">8</button>
-          <button class="digit" data-key="9" type="button">9</button>
-          <button class="wide secondary" data-key="clear" type="button">清空</button>
-          <button class="digit" data-key="0" type="button">0</button>
-          <button class="wide secondary" data-key="backspace" type="button">退格</button>
+      <section class="utility-tray">
+        <div class="tray-tabs">
+          <button data-panel-tab="settings" class="is-active" type="button">设置</button>
+          <button data-panel-tab="review" type="button">复习</button>
+          <button data-panel-tab="history" type="button">历史</button>
+          <button data-panel-tab="reference" type="button">口诀</button>
+        </div>
+
+        <div class="tray-panels">
+          <section class="tray-panel is-active" data-panel-section="settings">
+            <div class="settings-summary">
+              <div>
+                <span class="status-label">答错</span>
+                <strong id="wrongCountValue">0</strong>
+              </div>
+              <div>
+                <span class="status-label">错题</span>
+                <strong id="mistakeBankValue">0</strong>
+              </div>
+              <div>
+                <span class="status-label">最慢</span>
+                <strong id="slowFactValue">暂无</strong>
+              </div>
+            </div>
+
+            <section class="settings-section">
+              <span class="toolbar-label">范围</span>
+              <div class="segmented compact-grid" id="rangeGroup">
+                <button data-value="within10Random" class="is-active" type="button">10内随机</button>
+                <button data-value="within20Random" type="button">20内随机</button>
+                <button data-value="within20OddEven" type="button">20内单双</button>
+                <button data-value="within30Random" type="button">30内随机</button>
+                <button data-value="within30OddEven" type="button">30内单双</button>
+              </div>
+            </section>
+
+            <section class="settings-section">
+              <span class="toolbar-label">运算</span>
+              <div class="segmented compact-grid" id="operationGroup">
+                <button data-value="random" class="is-active" type="button">随机</button>
+                <button data-value="addition" type="button">加法</button>
+                <button data-value="subtraction" type="button">减法</button>
+                <button data-value="multiplication" type="button">乘法</button>
+              </div>
+            </section>
+
+            <section class="settings-section">
+              <span class="toolbar-label">固定数</span>
+              <div class="segmented fixed-number-group" id="fixedNumberGroup">
+                <button data-value="none" class="is-active" type="button">不固定</button>
+                <button data-value="11" type="button">11</button>
+                <button data-value="12" type="button">12</button>
+                <button data-value="13" type="button">13</button>
+                <button data-value="14" type="button">14</button>
+                <button data-value="15" type="button">15</button>
+                <button data-value="16" type="button">16</button>
+                <button data-value="17" type="button">17</button>
+                <button data-value="18" type="button">18</button>
+                <button data-value="19" type="button">19</button>
+              </div>
+              <p id="fixedNumberHint" class="toolbar-help">
+                选择后会尽量让其中一个数固定为它；减法优先固定在前面。
+              </p>
+            </section>
+
+            <section class="settings-section">
+              <span class="toolbar-label">过滤</span>
+              <div class="filter-grid" id="filterGroup">
+                <button data-filter="result-0" type="button">结果0</button>
+                <button data-filter="result-1" type="button">结果1</button>
+                <button data-filter="result-2" type="button">结果2</button>
+                <button data-filter="addend-0" type="button">加数0</button>
+                <button data-filter="addend-1" type="button">加数1</button>
+                <button data-filter="addend-2" type="button">加数2</button>
+                <button data-filter="subtrahend-0" type="button">减数0</button>
+                <button data-filter="subtrahend-1" type="button">减数1</button>
+                <button data-filter="subtrahend-2" type="button">减数2</button>
+                <button data-filter="multiplier-0" type="button">乘数0</button>
+                <button data-filter="multiplier-1" type="button">乘数1</button>
+                <button data-filter="multiplier-2" type="button">乘数2</button>
+                <button data-filter="multiplier-3" type="button">乘数3</button>
+              </div>
+            </section>
+
+            <div class="tray-actions">
+              <button id="resetStatsButton" class="ghost-button warning" type="button">清空统计</button>
+              <button id="clearMistakesButton" class="ghost-button" type="button">清空错题</button>
+            </div>
+          </section>
+
+          <section class="tray-panel" data-panel-section="review">
+            <section class="settings-section">
+              <span class="toolbar-label">复习清单</span>
+              <div class="segmented compact-grid" id="reviewModeGroup">
+                <button data-value="all" class="is-active" type="button">全部</button>
+                <button data-value="wrongOnly" type="button">错题</button>
+                <button data-value="slowOnly" type="button">最慢</button>
+              </div>
+              <div class="tray-actions">
+                <button id="generateReviewButton" class="ghost-button" type="button">
+                  生成今日复习
+                </button>
+              </div>
+              <div id="reviewList" class="review-list"></div>
+            </section>
+          </section>
+
+          <section class="tray-panel" data-panel-section="history">
+            <div class="tray-actions split">
+              <span class="toolbar-label">按列名切换排序</span>
+              <button id="clearHistoryButton" class="ghost-button warning" type="button">
+                清空历史
+              </button>
+            </div>
+            <div class="history-table-wrap">
+              <table class="history-table">
+                <thead>
+                  <tr>
+                    <th><button data-sort-key="problem" class="sort-button" type="button">题目</button></th>
+                    <th><button data-sort-key="responseMs" class="sort-button" type="button">用时</button></th>
+                    <th><button data-sort-key="isCorrect" class="sort-button" type="button">正误</button></th>
+                    <th><button data-sort-key="timestamp" class="sort-button" type="button">练习时间</button></th>
+                  </tr>
+                </thead>
+                <tbody id="historyTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="tray-panel" data-panel-section="reference">
+            <div class="reference-buttons" id="referenceButtons">
+              <button data-view="within10" class="is-active" type="button">10内加减</button>
+              <button data-view="within20" type="button">20内加减</button>
+              <button data-view="multiplication" type="button">乘法口诀</button>
+            </div>
+            <div id="referenceContent" class="reference-content"></div>
+          </section>
         </div>
       </section>
     </main>
-
-    <dialog id="settingsDialog" class="sheet-dialog">
-      <div class="dialog-shell">
-        <div class="dialog-header">
-          <h2>设置</h2>
-          <button id="closeSettingsDialog" class="text-button" type="button">关闭</button>
-        </div>
-
-        <section class="settings-summary">
-          <div>
-            <span class="status-label">答对</span>
-            <strong id="correctCountValue">0</strong>
-          </div>
-          <div>
-            <span class="status-label">答错</span>
-            <strong id="wrongCountValue">0</strong>
-          </div>
-          <div>
-            <span class="status-label">错题</span>
-            <strong id="mistakeBankValue">0</strong>
-          </div>
-          <div>
-            <span class="status-label">最慢</span>
-            <strong id="slowFactValue">暂无</strong>
-          </div>
-        </section>
-
-        <section class="settings-section">
-          <span class="toolbar-label">范围</span>
-          <div class="segmented" id="rangeGroup">
-            <button data-value="within10Random" class="is-active" type="button">10以内随机</button>
-            <button data-value="within20Random" type="button">20以内随机</button>
-            <button data-value="within20OddEven" type="button">20内单双</button>
-            <button data-value="within30Random" type="button">30以内随机</button>
-            <button data-value="within30OddEven" type="button">30内单双</button>
-          </div>
-        </section>
-
-        <section class="settings-section">
-          <span class="toolbar-label">运算</span>
-          <div class="segmented" id="operationGroup">
-            <button data-value="random" class="is-active" type="button">随机</button>
-            <button data-value="addition" type="button">加法</button>
-            <button data-value="subtraction" type="button">减法</button>
-            <button data-value="multiplication" type="button">乘法</button>
-          </div>
-        </section>
-
-        <section class="settings-section">
-          <span class="toolbar-label">固定数</span>
-          <div class="segmented fixed-number-group" id="fixedNumberGroup">
-            <button data-value="none" class="is-active" type="button">不固定</button>
-            <button data-value="11" type="button">11</button>
-            <button data-value="12" type="button">12</button>
-            <button data-value="13" type="button">13</button>
-            <button data-value="14" type="button">14</button>
-            <button data-value="15" type="button">15</button>
-            <button data-value="16" type="button">16</button>
-            <button data-value="17" type="button">17</button>
-            <button data-value="18" type="button">18</button>
-            <button data-value="19" type="button">19</button>
-          </div>
-          <p id="fixedNumberHint" class="toolbar-help">
-            选择后会尽量让其中一个数固定为它；减法优先固定在前面。
-          </p>
-        </section>
-
-        <section class="settings-section">
-          <span class="toolbar-label">过滤</span>
-          <div class="filter-grid" id="filterGroup">
-            <button data-filter="result-0" type="button">结果为0</button>
-            <button data-filter="result-1" type="button">结果为1</button>
-            <button data-filter="result-2" type="button">结果为2</button>
-            <button data-filter="addend-0" type="button">加数为0</button>
-            <button data-filter="addend-1" type="button">加数为1</button>
-            <button data-filter="addend-2" type="button">加数为2</button>
-            <button data-filter="subtrahend-0" type="button">减数为0</button>
-            <button data-filter="subtrahend-1" type="button">减数为1</button>
-            <button data-filter="subtrahend-2" type="button">减数为2</button>
-            <button data-filter="multiplier-0" type="button">乘数/被乘数为0</button>
-            <button data-filter="multiplier-1" type="button">乘数/被乘数为1</button>
-            <button data-filter="multiplier-2" type="button">乘数/被乘数为2</button>
-            <button data-filter="multiplier-3" type="button">乘数/被乘数为3</button>
-          </div>
-        </section>
-
-        <section class="settings-section">
-          <span class="toolbar-label">复习清单</span>
-          <div class="segmented" id="reviewModeGroup">
-            <button data-value="all" class="is-active" type="button">全部</button>
-            <button data-value="wrongOnly" type="button">只看错题</button>
-            <button data-value="slowOnly" type="button">只看最慢题</button>
-          </div>
-          <div class="dialog-actions">
-            <button id="generateReviewButton" class="ghost-button" type="button">生成今日复习清单</button>
-          </div>
-          <div id="reviewList" class="review-list"></div>
-        </section>
-
-        <section class="settings-section dialog-actions">
-          <button id="resetStatsButton" class="ghost-button warning" type="button">清空统计</button>
-          <button id="clearMistakesButton" class="ghost-button" type="button">清空错题</button>
-        </section>
-      </div>
-    </dialog>
-
-    <dialog id="historyDialog" class="sheet-dialog wide-sheet">
-      <div class="dialog-shell">
-        <div class="dialog-header">
-          <h2>历史记录</h2>
-          <button id="closeHistoryDialog" class="text-button" type="button">关闭</button>
-        </div>
-        <div class="history-table-wrap">
-          <table class="history-table">
-            <thead>
-              <tr>
-                <th><button data-sort-key="problem" class="sort-button" type="button">题目</button></th>
-                <th><button data-sort-key="responseMs" class="sort-button" type="button">用时</button></th>
-                <th><button data-sort-key="isCorrect" class="sort-button" type="button">正误</button></th>
-                <th><button data-sort-key="timestamp" class="sort-button" type="button">练习时间</button></th>
-              </tr>
-            </thead>
-            <tbody id="historyTableBody"></tbody>
-          </table>
-        </div>
-        <div class="dialog-actions">
-          <button id="clearHistoryButton" class="ghost-button warning" type="button">清空历史</button>
-        </div>
-      </div>
-    </dialog>
-
-    <dialog id="referenceDialog" class="sheet-dialog">
-      <div class="dialog-shell">
-        <div class="dialog-header">
-          <h2>口诀表</h2>
-          <button id="closeReferenceDialog" class="text-button" type="button">关闭</button>
-        </div>
-        <div class="reference-buttons" id="referenceButtons">
-          <button data-view="within10" class="is-active" type="button">10以内加减法</button>
-          <button data-view="within20" type="button">20以内加减法</button>
-          <button data-view="multiplication" type="button">9×9乘法口诀</button>
-        </div>
-        <div id="referenceContent" class="reference-content"></div>
-      </div>
-    </dialog>
 
     <script src="./app.js" defer></script>
   </body>
