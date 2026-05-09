@@ -21,10 +21,13 @@ const RANGE_OPTIONS = {
 };
 
 const OPERATION_OPTIONS = {
-  random: { label: "随机" },
+  addSubRandom: { label: "加减随机" },
   addition: { label: "加法" },
   subtraction: { label: "减法" },
   multiplication: { label: "乘法" },
+  division: { label: "除法" },
+  mulDivRandom: { label: "乘除随机" },
+  fourOpRandom: { label: "四则随机" },
 };
 
 const FILTER_LABELS = {
@@ -41,15 +44,20 @@ const FILTER_LABELS = {
   "multiplier-1": "乘数/被乘数为1",
   "multiplier-2": "乘数/被乘数为2",
   "multiplier-3": "乘数/被乘数为3",
+  "multiplier-10": "乘数/被乘数为10",
 };
 
 const defaultState = {
   settings: {
     range: "within10Random",
-    operation: "random",
+    operation: "addSubRandom",
     fixedNumber: "none",
     reviewMode: "all",
     filters: [],
+    keyFeedback: {
+      vibration: false,
+      sound: false,
+    },
   },
   stats: {
     totalAnswered: 0,
@@ -99,6 +107,7 @@ const elements = {
   fixedNumberGroup: document.querySelector("#fixedNumberGroup"),
   reviewModeGroup: document.querySelector("#reviewModeGroup"),
   filterGroup: document.querySelector("#filterGroup"),
+  keyFeedbackGroup: document.querySelector("#keyFeedbackGroup"),
   fixedNumberHint: document.querySelector("#fixedNumberHint"),
   reviewList: document.querySelector("#reviewList"),
   generateReviewButton: document.querySelector("#generateReviewButton"),
@@ -131,6 +140,7 @@ let nextProblemHandle = 0;
 let isAnswerLocked = false;
 let activePanel = "settings";
 let isPanelOpen = false;
+let audioContext = null;
 
 function loadState() {
   try {
@@ -152,7 +162,12 @@ function loadState() {
       settings: {
         ...defaultState.settings,
         ...saved.settings,
+        operation: normalizeOperationValue(saved.settings?.operation),
         filters: Array.isArray(saved.settings?.filters) ? saved.settings.filters : [],
+        keyFeedback: {
+          ...defaultState.settings.keyFeedback,
+          ...(saved.settings?.keyFeedback || {}),
+        },
       },
       stats: { ...defaultState.stats, ...saved.stats },
       currentProblem: savedProblem,
@@ -178,6 +193,15 @@ function cloneDefaultState() {
   return JSON.parse(JSON.stringify(defaultState));
 }
 
+function normalizeOperationValue(value) {
+  if (value === "random") {
+    return "addSubRandom";
+  }
+  return Object.prototype.hasOwnProperty.call(OPERATION_OPTIONS, value)
+    ? value
+    : defaultState.settings.operation;
+}
+
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
@@ -201,10 +225,16 @@ function releaseAnswerLock() {
 }
 
 function getAllowedOperations() {
-  if (state.settings.operation === "random") {
-    return ["addition", "subtraction", "multiplication"];
+  if (state.settings.operation === "addSubRandom") {
+    return ["addition", "subtraction"];
   }
-  return [state.settings.operation];
+  if (state.settings.operation === "mulDivRandom") {
+    return ["multiplication", "division"];
+  }
+  if (state.settings.operation === "fourOpRandom") {
+    return ["addition", "subtraction", "multiplication", "division"];
+  }
+  return [normalizeOperationValue(state.settings.operation)];
 }
 
 function buildProblemBank() {
@@ -235,9 +265,21 @@ function buildProblemBank() {
           }
         }
       }
-    } else {
+    } else if (operation === "multiplication") {
       for (let left = 0; left <= limit; left += 1) {
         for (let right = 0; right <= limit; right += 1) {
+          const problem = makeProblem(left, right, operation);
+          if (isProblemAllowed(problem, rangeRule)) {
+            bank.push(problem);
+          }
+        }
+      }
+    } else if (operation === "division") {
+      for (let left = 0; left <= limit; left += 1) {
+        for (let right = 1; right <= limit; right += 1) {
+          if (left % right !== 0) {
+            continue;
+          }
           const problem = makeProblem(left, right, operation);
           if (isProblemAllowed(problem, rangeRule)) {
             bank.push(problem);
@@ -251,13 +293,22 @@ function buildProblemBank() {
 }
 
 function makeProblem(left, right, operation) {
-  const operator = operation === "addition" ? "+" : operation === "subtraction" ? "-" : "×";
+  const operator =
+    operation === "addition"
+      ? "+"
+      : operation === "subtraction"
+        ? "-"
+        : operation === "multiplication"
+          ? "×"
+          : "÷";
   const answer =
     operation === "addition"
       ? left + right
       : operation === "subtraction"
         ? left - right
-        : left * right;
+        : operation === "multiplication"
+          ? left * right
+          : left / right;
   return {
     id: `${operation}-${left}-${right}`,
     left,
@@ -321,6 +372,15 @@ function isFiltered(problem) {
     if (
       filters.has(`multiplier-${problem.left}`) ||
       filters.has(`multiplier-${problem.right}`)
+    ) {
+      return true;
+    }
+  }
+
+  if (problem.operation === "division") {
+    if (
+      filters.has(`multiplier-${problem.right}`) ||
+      filters.has(`multiplier-${problem.answer}`)
     ) {
       return true;
     }
@@ -424,13 +484,22 @@ function getFactKey(problem) {
 
 function getFactLabelFromKey(key) {
   const [operation, left, right] = key.split("-");
-  const operator = operation === "addition" ? "+" : operation === "subtraction" ? "-" : "×";
+  const operator =
+    operation === "addition"
+      ? "+"
+      : operation === "subtraction"
+        ? "-"
+        : operation === "multiplication"
+          ? "×"
+          : "÷";
   const answer =
     operation === "addition"
       ? Number(left) + Number(right)
       : operation === "subtraction"
         ? Number(left) - Number(right)
-        : Number(left) * Number(right);
+        : operation === "multiplication"
+          ? Number(left) * Number(right)
+          : Number(left) / Number(right);
   return `${left} ${operator} ${right} = ${answer}`;
 }
 
@@ -523,6 +592,7 @@ function handleDigitInput(key) {
     state.currentInput = `${state.currentInput}${key}`.replace(/^0(\d)/, "$1");
   }
 
+  playKeyFeedback();
   persistAndRender();
   scheduleAutoSubmitIfReady();
 }
@@ -623,7 +693,12 @@ function updateFactProgress(factKey, responseMs, isCorrect) {
 
 function getSlowThresholdMs() {
   const limit = RANGE_OPTIONS[state.settings.range].limit;
-  if (state.settings.operation === "multiplication" || state.settings.operation === "random") {
+  if (
+    state.settings.operation === "multiplication" ||
+    state.settings.operation === "division" ||
+    state.settings.operation === "mulDivRandom" ||
+    state.settings.operation === "fourOpRandom"
+  ) {
     return limit <= 10 ? 3500 : 5000;
   }
   return limit <= 10 ? 2500 : limit <= 20 ? 3500 : 4500;
@@ -722,10 +797,15 @@ function setFeedback(message, kind = "") {
 
 function renderProblem() {
   const problem = state.currentProblem || makeProblem(7, 5, "addition");
+  const isInputActive =
+    state.isRunning && !isPanelOpen && !isAnswerLocked && Boolean(state.currentProblem);
+  const answerText = state.currentInput || (isInputActive ? "" : "?");
   elements.questionLeft.textContent = String(problem.left);
   elements.questionOperator.textContent = problem.operator;
   elements.questionRight.textContent = String(problem.right);
-  elements.answerDisplay.textContent = state.currentInput || "?";
+  elements.answerDisplay.textContent = answerText;
+  elements.answerDisplay.classList.toggle("is-placeholder", !state.currentInput && !isInputActive);
+  elements.answerDisplay.classList.toggle("is-active", isInputActive);
   elements.focusHint.textContent = getFocusHint(problem);
 }
 
@@ -827,6 +907,34 @@ function renderFilterButtons() {
   for (const button of elements.filterGroup.querySelectorAll("button[data-filter]")) {
     button.classList.toggle("is-active", selected.has(button.dataset.filter));
   }
+}
+
+function renderKeyFeedbackButtons() {
+  if (!elements.keyFeedbackGroup) {
+    return;
+  }
+
+  for (const button of elements.keyFeedbackGroup.querySelectorAll("button[data-feedback]")) {
+    const feedbackKey = button.dataset.feedback;
+    const isActive =
+      feedbackKey === "cursor"
+        ? true
+        : Boolean(state.settings.keyFeedback?.[feedbackKey]);
+    button.classList.toggle("is-active", isActive);
+  }
+}
+
+function toggleKeyFeedback(feedbackKey) {
+  if (feedbackKey === "cursor") {
+    return;
+  }
+  const nextValue = !Boolean(state.settings.keyFeedback?.[feedbackKey]);
+  state.settings.keyFeedback = {
+    ...defaultState.settings.keyFeedback,
+    ...state.settings.keyFeedback,
+    [feedbackKey]: nextValue,
+  };
+  persistAndRender();
 }
 
 function renderReviewList() {
@@ -1037,6 +1145,43 @@ function persistAndRender() {
   renderSegmented(elements.fixedNumberGroup, state.settings.fixedNumber);
   renderSegmented(elements.reviewModeGroup, state.settings.reviewMode);
   renderFilterButtons();
+  renderKeyFeedbackButtons();
+}
+
+function playKeyFeedback() {
+  if (state.settings.keyFeedback?.vibration && navigator.vibrate) {
+    navigator.vibrate(12);
+  }
+
+  if (!state.settings.keyFeedback?.sound) {
+    return;
+  }
+
+  const AudioCtor = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtor) {
+    return;
+  }
+
+  if (!audioContext) {
+    audioContext = new AudioCtor();
+  }
+
+  if (audioContext.state === "suspended") {
+    audioContext.resume().catch(() => {});
+  }
+
+  const startAt = audioContext.currentTime;
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  oscillator.type = "sine";
+  oscillator.frequency.setValueAtTime(760, startAt);
+  gain.gain.setValueAtTime(0.0001, startAt);
+  gain.gain.exponentialRampToValueAtTime(0.035, startAt + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.075);
+  oscillator.connect(gain);
+  gain.connect(audioContext.destination);
+  oscillator.start(startAt);
+  oscillator.stop(startAt + 0.08);
 }
 
 function clearStats() {
@@ -1111,6 +1256,13 @@ function bindEvents() {
     const button = event.target.closest("button[data-filter]");
     if (button) {
       toggleFilter(button.dataset.filter);
+    }
+  });
+
+  elements.keyFeedbackGroup.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-feedback]");
+    if (button) {
+      toggleKeyFeedback(button.dataset.feedback);
     }
   });
 

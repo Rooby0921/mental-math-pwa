@@ -125,10 +125,13 @@
             <section class="settings-section">
               <span class="toolbar-label">运算</span>
               <div class="segmented compact-grid" id="operationGroup">
-                <button data-value="random" class="is-active" type="button">随机</button>
+                <button data-value="addSubRandom" class="is-active" type="button">加减随机</button>
                 <button data-value="addition" type="button">加法</button>
                 <button data-value="subtraction" type="button">减法</button>
                 <button data-value="multiplication" type="button">乘法</button>
+                <button data-value="division" type="button">除法</button>
+                <button data-value="mulDivRandom" type="button">乘除随机</button>
+                <button data-value="fourOpRandom" type="button">四则随机</button>
               </div>
             </section>
 
@@ -167,6 +170,16 @@
                 <button data-filter="multiplier-1" type="button">乘数1</button>
                 <button data-filter="multiplier-2" type="button">乘数2</button>
                 <button data-filter="multiplier-3" type="button">乘数3</button>
+                <button data-filter="multiplier-10" type="button">乘数10</button>
+              </div>
+            </section>
+
+            <section class="settings-section">
+              <span class="toolbar-label">按键反馈</span>
+              <div class="segmented compact-grid" id="keyFeedbackGroup">
+                <button data-feedback="cursor" class="is-active is-locked" type="button">光标反馈</button>
+                <button data-feedback="vibration" type="button">震动</button>
+                <button data-feedback="sound" type="button">声音</button>
               </div>
             </section>
 
