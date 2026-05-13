@@ -1,5 +1,8 @@
 # 口算练习网页
 
+[`点击访问`](https://rooby0921.github.io/mental-math-pwa/) 
+
+
 这是一个适配 iPhone 的纯前端口算练习网页，支持：
 
 - `10 以内` 题型
